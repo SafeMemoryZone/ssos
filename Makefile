@@ -1,5 +1,5 @@
 ASM = nasm
-ASM_FLAGS = -f bin
+ASM_FLAGS = -f bin -isrc/
 
 .PHONY: all clean
 
