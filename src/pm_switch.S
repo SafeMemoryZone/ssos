@@ -1,5 +1,7 @@
 %include "gdt.S"
 
+STACK_BASE_PM equ 0x9fbff 
+
 _switch_to_pm:
   cli ; disable interrupts
   lgdt [gdt_descriptor] ; load gdt
@@ -16,7 +18,7 @@ _pm_start:
   mov fs, ax
   mov gs, ax 
 
-  mov ebp, 0x9fbff ; 0x9fc00 - 0x1 = 0x9fbff
+  mov ebp, STACK_BASE_PM ; 0x9fc00 - 0x1 = 0x9fbff
   mov esp, ebp
 
   jmp $ ; TODO: jump to kernel
