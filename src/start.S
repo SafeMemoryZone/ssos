@@ -1,7 +1,5 @@
-[org 0x7c00]
-[bits 16]
-
-STACK_BASE equ 0x8000
+org 0x7c00
+bits 16
 
 jmp _start
 
@@ -20,7 +18,7 @@ _start:
 
   mov si, BOOTLOADER_MSG
   call _print
-
+  call _load_kernel
   call _switch_to_pm
 
   jmp $
@@ -54,6 +52,16 @@ print_continue:
   jmp print_loop 
 
 print_done:
+  popa
+  ret
+
+; params:
+;  none 
+_load_kernel:
+  pusha
+
+  ; todo load kernel
+
   popa
   ret
 

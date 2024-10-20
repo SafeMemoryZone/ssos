@@ -1,41 +1,52 @@
+# Config
+
+OUT_DIR := build
 SRC_DIR := src
-KERNEL_SRC_DIR := $(SRC_DIR)/kernel
-BOOTLOADER_SRC_DIR := $(SRC_DIR)/start
-BUILD_DIR := build
-
-ASM := nasm
-ASM_FLAGS := -f elf -i $(SRC_DIR)/
 CC := x86_64-elf-gcc
-CC_FLAGS := -ffreestanding -c
+CC_FLAGS := -ffreestanding -c -m32
 LD := x86_64-elf-ld
-LD_FLAGS := --oformat binary -Ttext 0x1000
+LD_FLAGS := --oformat binary -m elf_i386
+ASM := nasm
+ASM_ELF_FLAGS := -f elf -i$(SRC_DIR)
+ASM_BIN_FLAGS := -f bin -i$(SRC_DIR)
 
-KERNEL_SOURCES := $(wildcard $(KERNEL_SRC_DIR)/*.c)
-BOOTLOADER_SOURCES := $(wildcard $(BOOTLOADER_SRC_DIR)/*.S)
+BOOTLOADER_SOURCES := $(SRC_DIR)/start.S $(SRC_DIR)/gdt.S $(SRC_DIR)/pm_switch.S
+KERNEL_SOURCES  := $(patsubst %, $(SRC_DIR)/%, kernel_start.S kmain.c)
+BOOTLOADER_BIN := $(OUT_DIR)/bootloader.bin
+KERNEL_BIN := $(OUT_DIR)/kernel.bin
+IMG := $(OUT_DIR)/ssos.img
 
-KERNEL_OBJECTS := $(patsubst $(KERNEL_SRC_DIR)/%.c, $(BUILD_DIR)/kernel_%.o, $(KERNEL_SOURCES))
-BOOTLOADER_OBJECTS := $(patsubst $(BOOTLOADER_SRC_DIR)/%.S, $(BUILD_DIR)/bootloader_%.o, $(BOOTLOADER_SOURCES))
+# Auto-generated vars
 
-KERNEL_BIN := $(BUILD_DIR)/kernel.bin
-BOOTLOADER_BIN := $(BUILD_DIR)/bootloader.bin
+KERNEL_OBJS := $(patsubst $(SRC_DIR)/%, $(OUT_DIR)/%.o, $(KERNEL_SOURCES))
 
+# Rules
 .PHONY: all clean
 
-all: $(BOOTLOADER_BIN) $(KERNEL_BIN)
+all: $(IMG)
 
-$(BUILD_DIR)/bootloader_%.o: $(BOOTLOADER_SRC_DIR)/%.S
-	mkdir -p $(BUILD_DIR)
-	$(ASM) $(ASM_FLAGS) -o $@ $<
+# Compile bootloader assembly files directly into bootloader.bin
+$(BOOTLOADER_BIN): $(BOOTLOADER_SOURCES)
+	@mkdir -p $(OUT_DIR)
+	$(ASM) $(ASM_BIN_FLAGS) -o $@ $(SRC_DIR)/start.S
 
-$(BUILD_DIR)/kernel_%.o: $(KERNEL_SRC_DIR)/%.c
-	mkdir -p $(BUILD_DIR)
+# Compile kernel assembly file with -f elf
+$(OUT_DIR)/%.S.o: $(SRC_DIR)/%.S
+	@mkdir -p $(OUT_DIR)
+	$(ASM) $(ASM_ELF_FLAGS) -o $@ $<
+
+# Compile kernel C files
+$(OUT_DIR)/%.c.o: $(SRC_DIR)/%.c
+	@mkdir -p $(OUT_DIR)
 	$(CC) $(CC_FLAGS) -o $@ $<
 
-$(BOOTLOADER_BIN): $(BOOTLOADER_OBJECTS)
+# Link kernel objects into a binary
+$(KERNEL_BIN): $(KERNEL_OBJS)
 	$(LD) $(LD_FLAGS) -o $@ $^
 
-$(KERNEL_BIN): $(KERNEL_OBJECTS)
-	$(LD) $(LD_FLAGS) -o $@ $^
+# Combine bootloader.bin and kernel.bin into final image
+$(IMG): $(BOOTLOADER_BIN) $(KERNEL_BIN)
+	cat $^ > $@
 
 clean:
-	rm -rf $(BUILD_DIR)/*
+	rm -rf $(OUT_DIR)/*
