@@ -1,5 +1,5 @@
-org 0x7c00
-bits 16
+[org 0x7c00]
+[bits 16]
 
 jmp _start
 
@@ -10,8 +10,7 @@ BOOTLOADER_MSG: db "[DEBUG] Bootloader loaded", 10, 0
 _start:
   mov bp, STACK_BASE
   mov sp, bp
-  mov ax, 0
-  mov cs, ax
+  xor ax, ax
   mov ds, ax
   mov es, ax
   mov ss, ax
@@ -60,10 +59,12 @@ print_done:
 _load_kernel:
   pusha
 
-  ; todo load kernel
+  jmp $
+  ; TODO: load kernel
 
   popa
   ret
 
 times 510-($-$$) db 0
-dw 0xaa55 
+db 0x55
+db 0xaa

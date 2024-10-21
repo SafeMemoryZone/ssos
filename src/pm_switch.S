@@ -9,16 +9,13 @@ _switch_to_pm:
   mov cr0, eax
   jmp CODE_SEG:_pm_start ; a:b => a is now the offset into the GDT, not a register that holds an address
 
-bits 32
+[bits 32]
 _pm_start:
-  mov ax, DATA_SEG ; all segment registers will use the data segment
-  mov ds, ax
-  mov ss, ax
-  mov es, ax
-  mov fs, ax
-  mov gs, ax 
-
   mov ebp, STACK_BASE_PM ; 0x9fc00 - 0x1 = 0x9fbff
   mov esp, ebp
+  mov ax, DATA_SEG ; all segment registers will use the data segment
+  mov ds, ax
+  mov es, ax
+  mov ss, ax
 
   jmp KERNEL_START_ADDR
