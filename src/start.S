@@ -3,8 +3,6 @@
 
 jmp _start
 
-%include "./pm_switch.S"
-
 BOOTLOADER_MSG: db "[DEBUG] Bootloader loaded", 10, 0
 
 _start:
@@ -65,6 +63,7 @@ _load_kernel:
   popa
   ret
 
+%include "./pm_switch.S"
+
 times 510-($-$$) db 0
-db 0x55
-db 0xaa
+dw 0xaa55

@@ -1,5 +1,4 @@
-%include "config.S"
-%include "gdt.S"
+[bits 16]
 
 _switch_to_pm:
   cli ; disable interrupts
@@ -19,3 +18,6 @@ _pm_start:
   mov ss, ax
 
   jmp KERNEL_START_ADDR
+
+%include "config.S"
+%include "gdt.S"
