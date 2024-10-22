@@ -15,6 +15,7 @@ _start:
 
   mov si, BOOTLOADER_MSG
   call _print
+  mov dl, BOOT_DRIVE_NUMBER
   call _load_kernel
   call _switch_to_pm
 
@@ -53,12 +54,19 @@ print_done:
   ret
 
 ; params:
-;  none 
+;  dl - boot drive number
 _load_kernel:
   pusha
 
-  jmp $
-  ; TODO: load kernel
+  mov ah, 0x02 ; 0x02 = 'read'
+  mov al, 16 ; 16 sectors
+  mov cl, 2 ; start sector
+  xor ch, ch ; cylinder
+  xor dh, dh ; head
+  mov bx, KERNEL_START_ADDR ; es:bx pointer to store buffer
+
+  int 0x13
+  ; TODO: check if succeeded
 
   popa
   ret
