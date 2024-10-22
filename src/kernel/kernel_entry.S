@@ -1,6 +1,5 @@
 [bits 32]
-
-extern kmain
+[extern kmain]
 
 call kmain
 jmp $

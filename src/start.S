@@ -1,11 +1,11 @@
 [org 0x7c00]
 [bits 16]
 
-jmp _start
+jmp start
 
 BOOTLOADER_MSG: db "[DEBUG] Bootloader loaded", 10, 0
 
-_start:
+start:
   mov bp, STACK_BASE
   mov sp, bp
   xor ax, ax
@@ -14,16 +14,16 @@ _start:
   mov ss, ax
 
   mov si, BOOTLOADER_MSG
-  call _print
+  call print
   mov dl, BOOT_DRIVE_NUMBER
-  call _load_kernel
-  call _switch_to_pm
+  call load_kernel
+  call switch_to_pm
 
   jmp $
 
 ; params:
 ;   si = pointer to null-terminated string
-_print:
+print:
   pusha
 
 print_loop:
@@ -55,7 +55,7 @@ print_done:
 
 ; params:
 ;  dl - boot drive number
-_load_kernel:
+load_kernel:
   pusha
 
   mov ah, 0x02 ; 0x02 = 'read'
