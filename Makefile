@@ -11,7 +11,7 @@ ASM_ELF_FLAGS := -f elf -i$(SRC_DIR)
 ASM_BIN_FLAGS := -f bin -i$(SRC_DIR)
 
 BOOTLOADER_SOURCES := $(SRC_DIR)/start.S $(SRC_DIR)/gdt.S $(SRC_DIR)/pm_switch.S
-KERNEL_SOURCES  := $(SRC_DIR)/kernel/kernel_start.S $(SRC_DIR)/kernel/kmain.c
+KERNEL_SOURCES  := $(SRC_DIR)/kernel/kernel_entry.S $(SRC_DIR)/kernel/kmain.c
 
 BOOTLOADER_BIN := $(BIN_DIR)/bootloader.bin
 KERNEL_BIN := $(BIN_DIR)/kernel.bin
