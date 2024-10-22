@@ -1,5 +1,7 @@
+#include "screen.h"
+
 void kmain() {
-  char *video_memory = (char*) 0xb8000;
-  *video_memory = 'A';
-  for(;;) {}
+  clear_screen();
+  for (;;) {
+  }
 }
