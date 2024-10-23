@@ -1,6 +1,6 @@
 #include "screen.h"
 #include "ports.h"
-#include "../lib/stdint.h"
+#include "stdint.h"
 
 #define VGA_BUFFER_ADDR 0xb8000
 #define MAX_ROWS 25
