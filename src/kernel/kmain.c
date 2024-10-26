@@ -2,6 +2,12 @@
 
 void kmain() {
   clear_screen();
-  for (;;) {
+  uint8_t style = 0;
+
+  for(int i = 0; i < 500; i++) {
+    print("Hello, World", style);
+    style++;
   }
+
+  print("I'm a newline\n", DEFAULT_STYLE);
 }
