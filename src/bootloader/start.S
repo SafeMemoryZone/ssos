@@ -6,12 +6,13 @@ KERNEL_START_ADDR equ 0x1000
 BOOT_DRIVE_NUMBER equ 0x80
 
 start:
-  mov bp, STACK_BASE
-  mov sp, bp
+  cli
   xor ax, ax
   mov ds, ax
   mov es, ax
   mov ss, ax
+  mov sp, STACK_BASE
+  sti
 
   mov dl, BOOT_DRIVE_NUMBER
   call load_kernel
@@ -19,8 +20,8 @@ start:
 
   jmp $
 
-; params:
-;  dl - boot drive number
+  ; params:
+  ;  dl - boot drive number
 load_kernel:
   pusha
 
@@ -32,12 +33,10 @@ load_kernel:
   mov bx, KERNEL_START_ADDR ; es:bx pointer to store buffer
 
   int 0x13
-  ; TODO: check if succeeded
 
   popa
   ret
 
 %include "pm_switch.S"
-
 times 510-($-$$) db 0
 dw 0xaa55

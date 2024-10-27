@@ -1,7 +1,7 @@
 #include "screen.h"
 
 #include "ports.h"
-#include "stdint.h"
+#include "types.h"
 
 #define VGA_BUFFER_ADDR 0xb8000
 #define MAX_ROWS 25
@@ -10,44 +10,44 @@
 #define IO_PORT_SCREEN_CTRL 0x3d4
 #define IO_PORT_SCREEN_DATA 0x3d5
 
-uint16_t get_cursor_screen_off() {
+u16 get_cursor_screen_off() {
   port_byte_out(IO_PORT_SCREEN_CTRL, 14);
-  uint16_t off = port_byte_in(IO_PORT_SCREEN_DATA) << 8;
+  u16 off = port_byte_in(IO_PORT_SCREEN_DATA) << 8;
   port_byte_out(IO_PORT_SCREEN_CTRL, 15);
   off += port_byte_in(IO_PORT_SCREEN_DATA);
 
   return off;
 }
 
-void set_cursor_screen_off(uint16_t off) {
+void set_cursor_screen_off(u16 off) {
   port_byte_out(IO_PORT_SCREEN_CTRL, 14);
-  port_byte_out(IO_PORT_SCREEN_DATA, (uint8_t)(off >> 8));
+  port_byte_out(IO_PORT_SCREEN_DATA, (u8)(off >> 8));
   port_byte_out(IO_PORT_SCREEN_CTRL, 15);
-  port_byte_out(IO_PORT_SCREEN_DATA, (uint8_t)(off & 0xff));
+  port_byte_out(IO_PORT_SCREEN_DATA, (u8)(off & 0xff));
 }
 
-static inline char *get_vga_addr_from(uint8_t row, uint8_t col) {
+static inline char *get_vga_addr_from(u8 row, u8 col) {
   return (char *)VGA_BUFFER_ADDR + 2 * (row * MAX_COLS + col);
 }
 
-static inline uint8_t get_screen_off_row(uint16_t off) { return off / MAX_COLS; }
+static inline u8 get_screen_off_row(u16 off) { return off / MAX_COLS; }
 
-static inline uint8_t get_screen_off_col(uint16_t off) { return off % MAX_COLS; }
+static inline u8 get_screen_off_col(u16 off) { return off % MAX_COLS; }
 
-static inline uint16_t cell_addr_to_screen_off(char *addr) {
+static inline u16 cell_addro_screen_off(char *addr) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpointer-to-int-cast"
-  return (uint16_t)(addr - VGA_BUFFER_ADDR) / 2;
+  return (u16)(addr - VGA_BUFFER_ADDR) / 2;
 #pragma GCC diagnostic pop
 }
 
 void clear_screen() {
-  uint16_t screen_size = MAX_ROWS * MAX_COLS;
+  u16 screen_size = MAX_ROWS * MAX_COLS;
 
   for (int i = 0; i < screen_size; i++) {
     char *curr_cell_addr = (char *)VGA_BUFFER_ADDR + i * 2;
     *curr_cell_addr = ' ';
-    curr_cell_addr[1] = DEFAULT_STYLE;
+    curr_cell_addr[1] = VGA_DEFAULT_STYLE;
   }
 
   set_cursor_screen_off(0);
@@ -67,16 +67,16 @@ void scroll_screen() {
   for (int col = 0; col < MAX_COLS; col++) {
     char *curr_cell_addr = get_vga_addr_from(MAX_ROWS - 1, col);
     *curr_cell_addr = ' ';
-    curr_cell_addr[1] = DEFAULT_STYLE;
+    curr_cell_addr[1] = VGA_DEFAULT_STYLE;
   }
 }
 
-void kprint_at(uint8_t start_row, uint8_t start_col, char *str, uint8_t style) {
+void kprint_at(u8 start_row, u8 start_col, char *str, u8 style) {
   char *curr_cell_addr = get_vga_addr_from(start_row, start_col);
 
   while (*str) {
     if (*str == '\n') {
-      uint16_t curr_off = cell_addr_to_screen_off(curr_cell_addr);
+      u16 curr_off = cell_addro_screen_off(curr_cell_addr);
       curr_cell_addr = get_vga_addr_from(get_screen_off_row(curr_off) + 1, 0);
     }
     else {
@@ -93,10 +93,10 @@ void kprint_at(uint8_t start_row, uint8_t start_col, char *str, uint8_t style) {
     str++;
   }
 
-  set_cursor_screen_off(cell_addr_to_screen_off(curr_cell_addr));
+  set_cursor_screen_off(cell_addro_screen_off(curr_cell_addr));
 }
 
-void print(char *str, uint8_t style) {
-  uint16_t curr_off = get_cursor_screen_off();
+void kprint(char *str, u8 style) {
+  u16 curr_off = get_cursor_screen_off();
   kprint_at(get_screen_off_row(curr_off), get_screen_off_col(curr_off), str, style);
 }

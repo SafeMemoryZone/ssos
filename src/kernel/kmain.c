@@ -1,13 +1,15 @@
 #include "screen.h"
+#include "isr.h"
+#include "idt.h"
+
+void init_idt() {
+  install_isrs();
+  load_idt();
+}
 
 void kmain() {
   clear_screen();
-  uint8_t style = 0;
+  init_idt();
 
-  for(int i = 0; i < 500; i++) {
-    print("Hello, World", style);
-    style++;
-  }
-
-  print("I'm a newline\n", DEFAULT_STYLE);
+  for(;;) {} // never return
 }
