@@ -19,7 +19,8 @@ BOOTLOADER_SOURCES := $(wildcard $(SRC_DIR)/bootloader/*.S) \
 
 KERNEL_SOURCES := $(wildcard $(SRC_DIR)/kernel/*.S) \
 		  $(wildcard $(SRC_DIR)/kernel/*.c) \
-		  $(wildcard $(SRC_DIR)/drivers/*.c)
+		  $(wildcard $(SRC_DIR)/drivers/*.c) \
+			$(wildcard $(SRC_DIR)/lib/*.c)
 
 BOOTLOADER_BIN := $(BIN_DIR)/bootloader.bin
 KERNEL_BIN := $(BIN_DIR)/kernel.bin

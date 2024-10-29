@@ -1,6 +1,7 @@
 #include "idt.h"
 
 idt_entry_t idt[IDT_ENTRIES_COUNT];
+idt_register_t idt_reg;
 
 idt_entry_t make_idt_entry(u32 handler_addr) {
   return (idt_entry_t) {
@@ -13,10 +14,8 @@ idt_entry_t make_idt_entry(u32 handler_addr) {
 }
 
 void load_idt() {
-  idt_register_t idt_reg = {
-    .base = (u32)&idt,
-    .limit = IDT_ENTRIES_COUNT * sizeof(idt_entry_t) - 1
-  };
+  idt_reg.base = (u32) &idt;
+  idt_reg.limit = IDT_ENTRIES_COUNT * sizeof(idt_entry_t) - 1;
 
   __asm__ __volatile__("lidtl (%0)" : : "r" (&idt_reg));
 }

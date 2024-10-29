@@ -1,6 +1,7 @@
-#include "screen.h"
+#include "vga_screen.h"
 
 #include "ports.h"
+#include "strlib.h"
 #include "types.h"
 
 #define VGA_BUFFER_ADDR 0xb8000
@@ -34,7 +35,7 @@ static inline u8 get_screen_off_row(u16 off) { return off / MAX_COLS; }
 
 static inline u8 get_screen_off_col(u16 off) { return off % MAX_COLS; }
 
-static inline u16 cell_addro_screen_off(char *addr) {
+static inline u16 cell_add_to_screen_off(char *addr) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpointer-to-int-cast"
   return (u16)(addr - VGA_BUFFER_ADDR) / 2;
@@ -76,7 +77,7 @@ void kprint_at(u8 start_row, u8 start_col, char *str, u8 style) {
 
   while (*str) {
     if (*str == '\n') {
-      u16 curr_off = cell_addro_screen_off(curr_cell_addr);
+      u16 curr_off = cell_add_to_screen_off(curr_cell_addr);
       curr_cell_addr = get_vga_addr_from(get_screen_off_row(curr_off) + 1, 0);
     }
     else {
@@ -93,10 +94,30 @@ void kprint_at(u8 start_row, u8 start_col, char *str, u8 style) {
     str++;
   }
 
-  set_cursor_screen_off(cell_addro_screen_off(curr_cell_addr));
+  set_cursor_screen_off(cell_add_to_screen_off(curr_cell_addr));
 }
 
 void kprint(char *str, u8 style) {
   u16 curr_off = get_cursor_screen_off();
   kprint_at(get_screen_off_row(curr_off), get_screen_off_col(curr_off), str, style);
+}
+
+void kprint_dec(u32 num, u8 style) {
+  char str[11];  // maximum 10 digits + null
+  int i = 0;
+
+  if (num == 0) {
+    str[i++] = '0';
+  }
+  else {
+    while (num) {
+      str[i] = num % 10 + '0';
+      i++;
+      num /= 10;
+    }
+  }
+
+  str[i] = 0;
+  reverse_str(str);
+  kprint(str, style);
 }

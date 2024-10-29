@@ -1,6 +1,6 @@
 #include "isr.h"
 #include "idt.h"
-#include "screen.h"
+#include "vga_screen.h"
 
 void install_isrs() {
   idt[0] = make_idt_entry((u32)isr0);
@@ -37,44 +37,47 @@ void install_isrs() {
   idt[31] = make_idt_entry((u32)isr31);
 }
 
-void default_isr_handler(cpu_ctx_t ctx) {
-  static char *exception_messages[] = {
-    "Division By Zero",
-    "Debug",
-    "Non Maskable Interrupt",
-    "Breakpoint",
-    "Into Detected Overflow",
-    "Out of Bounds",
-    "Invalid Opcode",
-    "No Coprocessor",
-    "Double Fault",
-    "Coprocessor Segment Overrun",
-    "Bad TSS",
-    "Segment Not Present",
-    "Stack Fault",
-    "General Protection Fault",
-    "Page Fault",
-    "Unknown Interrupt",
-    "Coprocessor Fault",
-    "Alignment Check",
-    "Machine Check",
-    "Reserved",
-    "Reserved",
-    "Reserved",
-    "Reserved",
-    "Reserved",
-    "Reserved",
-    "Reserved",
-    "Reserved",
-    "Reserved",
-    "Reserved",
-    "Reserved",
-    "Reserved",
-    "Reserved"
-  };
+char *exception_messages[] = {
+  "Division By Zero",
+  "Debug",
+  "Non Maskable Interrupt",
+  "Breakpoint",
+  "Into Detected Overflow",
+  "Out of Bounds",
+  "Invalid Opcode",
+  "No Coprocessor",
+  "Double Fault",
+  "Coprocessor Segment Overrun",
+  "Bad TSS",
+  "Segment Not Present",
+  "Stack Fault",
+  "General Protection Fault",
+  "Page Fault",
+  "Unknown Interrupt",
+  "Coprocessor Fault",
+  "Alignment Check",
+  "Machine Check",
+  "Reserved",
+  "Reserved",
+  "Reserved",
+  "Reserved",
+  "Reserved",
+  "Reserved",
+  "Reserved",
+  "Reserved",
+  "Reserved",
+  "Reserved",
+  "Reserved",
+  "Reserved",
+  "Reserved"
+};
 
-  clear_screen();
+
+void default_isr_handler(cpu_ctx_t ctx) {
   kprint("CPU Exception: ", VGA_GET_STYLE(VGA_RED, VGA_BLACK));
   kprint(exception_messages[ctx.int_num], VGA_GET_STYLE(VGA_RED, VGA_BLACK));
+  kprint(" (", VGA_GET_STYLE(VGA_RED, VGA_BLACK));
+  kprint_dec(ctx.err_code, VGA_GET_STYLE(VGA_RED, VGA_BLACK));
+  kprint(")", VGA_GET_STYLE(VGA_RED, VGA_BLACK));
   kprint("\n", VGA_DEFAULT_STYLE);
 }
