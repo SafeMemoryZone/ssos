@@ -6,10 +6,10 @@ INCLUDE_DIR := include
 CC := x86_64-elf-gcc
 CFLAGS := -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
 	  -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -c \
-	  -I$(INCLUDE_DIR)/drivers -I$(INCLUDE_DIR)/lib -I$(INCLUDE_DIR)/kernel
+	  -I$(INCLUDE_DIR)/drivers -I$(INCLUDE_DIR)/lib -I$(INCLUDE_DIR)/kernel -std=c11
 
 LD := x86_64-elf-ld
-LDFLAGS := -m elf_i386 -T $(SRC_DIR)/kernel/link.ld
+LDFLAGS := -T $(SRC_DIR)/kernel/link.ld
 AS := nasm
 AS_ELF_FLAGS := -f elf -i$(INCLUDE_DIR)/bootloader
 AS_BIN_FLAGS := -f bin -i$(INCLUDE_DIR)/bootloader

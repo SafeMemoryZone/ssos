@@ -1,4 +1,5 @@
 #include "idt.h"
+#include "isr.h"
 
 idt_entry_t idt[IDT_ENTRIES_COUNT];
 idt_register_t idt_reg;
@@ -18,4 +19,9 @@ void load_idt() {
   idt_reg.limit = IDT_ENTRIES_COUNT * sizeof(idt_entry_t) - 1;
 
   __asm__ __volatile__("lidtl (%0)" : : "r" (&idt_reg));
+}
+
+void init_idt() {
+  install_isrs();
+  load_idt();
 }

@@ -19,6 +19,7 @@ typedef struct {
 
 extern idt_entry_t idt[IDT_ENTRIES_COUNT];
 
+void init_idt();
 void load_idt();
 idt_entry_t make_idt_entry(u32 handler_addr);
 #endif  // IDT_H

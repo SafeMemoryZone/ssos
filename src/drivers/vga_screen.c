@@ -102,6 +102,10 @@ void kprint(char *str, u8 style) {
   kprint_at(get_screen_off_row(curr_off), get_screen_off_col(curr_off), str, style);
 }
 
+void kprint_default(char *str) {
+  kprint(str, VGA_DEFAULT_STYLE);
+}
+
 void kprint_dec(u32 num, u8 style) {
   char str[11];  // maximum 10 digits + null
   int i = 0;
@@ -120,4 +124,8 @@ void kprint_dec(u32 num, u8 style) {
   str[i] = 0;
   reverse_str(str);
   kprint(str, style);
+}
+
+void kprint_dec_default(u32 num) {
+  kprint_dec(num, VGA_DEFAULT_STYLE);
 }

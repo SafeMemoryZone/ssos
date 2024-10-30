@@ -21,4 +21,11 @@ typedef u32 size_t;
 #define I32_MIN (-2147483648)
 #define I32_MAX 2147483647
 #define U32_MAX 4294967295U
+
+_Static_assert(sizeof(i8) == 1, "i8 size is not 1 byte");
+_Static_assert(sizeof(u8) == 1, "u8 size is not 1 byte");
+_Static_assert(sizeof(i16) == 2, "i16 size is not 2 bytes");
+_Static_assert(sizeof(u16) == 2, "u16 size is not 2 bytes");
+_Static_assert(sizeof(i32) == 4, "i32 size is not 4 bytes");
+_Static_assert(sizeof(u32) == 4, "u32 size is not 4 bytes");
 #endif  // TYPES_H

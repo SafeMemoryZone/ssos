@@ -1,4 +1,5 @@
 OUTPUT_FORMAT(binary)
+OUTPUT_ARCH(i386)
 
 STARTUP(build/objs/kernel/kmain_init.S.o)
 

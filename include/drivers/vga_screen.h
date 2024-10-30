@@ -27,5 +27,7 @@ enum VGAColor {
 void clear_screen();
 void kprint_at(u8 start_row, u8 start_col, char *str, u8 style);
 void kprint(char *str, u8 style);
+void kprint_default(char *str);
 void kprint_dec(u32 num, u8 style);
+void kprint_dec_default(u32 num);
 #endif // SCREEN_H
