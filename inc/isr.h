@@ -1,6 +1,6 @@
 #ifndef ISR_H
 #define ISR_H
-#include "types.h"
+#include <stdint.h>
 
 // Handlers for CPU exceptions
 extern void isr0();
@@ -37,10 +37,10 @@ extern void isr30();
 extern void isr31();
 
 typedef struct {
-  u32 ds;
-  u32 edi, esi, ebp, esp, ebx, edx, ecx, eax;
-  u32 int_num, err_code;
-  u32 eip, cs, eflags, useresp, ss;
+  uint32_t ds;
+  uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax;
+  uint32_t int_num, err_code;
+  uint32_t eip, cs, eflags, useresp, ss;
 } cpu_ctx_t;
 
 void install_isrs();

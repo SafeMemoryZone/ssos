@@ -37,6 +37,6 @@ load_kernel:
   popa
   ret
 
-%include "pm_switch.S"
+%include "prot_mode.inc"
 times 510-($-$$) db 0
 dw 0xaa55

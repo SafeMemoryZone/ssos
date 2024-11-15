@@ -1,13 +1,15 @@
-#include "strlib.h"
+#include "utils.h"
 
-size_t strlen(char *str) {
+#include <stddef.h>
+
+size_t utils_strlen(char *str) {
   size_t len = 0;
   while (*str++) len++;
   return len;
 }
 
 void reverse_str(char *str) {
-  size_t len = strlen(str);
+  size_t len = utils_strlen(str);
   size_t last_idx = len - 1;
 
   for (size_t i = 0; i < len / 2; i++) {

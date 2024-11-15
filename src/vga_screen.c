@@ -1,8 +1,9 @@
 #include "vga_screen.h"
 
+#include <stdint.h>
+
 #include "ports.h"
-#include "strlib.h"
-#include "types.h"
+#include "utils.h"
 
 #define VGA_BUFFER_ADDR 0xb8000
 #define MAX_ROWS 25
@@ -11,39 +12,39 @@
 #define IO_PORT_SCREEN_CTRL 0x3d4
 #define IO_PORT_SCREEN_DATA 0x3d5
 
-u16 get_cursor_screen_off() {
+uint16_t get_cursor_screen_off() {
   port_byte_out(IO_PORT_SCREEN_CTRL, 14);
-  u16 off = port_byte_in(IO_PORT_SCREEN_DATA) << 8;
+  uint16_t off = port_byte_in(IO_PORT_SCREEN_DATA) << 8;
   port_byte_out(IO_PORT_SCREEN_CTRL, 15);
   off += port_byte_in(IO_PORT_SCREEN_DATA);
 
   return off;
 }
 
-void set_cursor_screen_off(u16 off) {
+void set_cursor_screen_off(uint16_t off) {
   port_byte_out(IO_PORT_SCREEN_CTRL, 14);
-  port_byte_out(IO_PORT_SCREEN_DATA, (u8)(off >> 8));
+  port_byte_out(IO_PORT_SCREEN_DATA, (uint8_t)(off >> 8));
   port_byte_out(IO_PORT_SCREEN_CTRL, 15);
-  port_byte_out(IO_PORT_SCREEN_DATA, (u8)(off & 0xff));
+  port_byte_out(IO_PORT_SCREEN_DATA, (uint8_t)(off & 0xff));
 }
 
-static inline char *get_vga_addr_from(u8 row, u8 col) {
+static inline char *get_vga_addr_from(uint8_t row, uint8_t col) {
   return (char *)VGA_BUFFER_ADDR + 2 * (row * MAX_COLS + col);
 }
 
-static inline u8 get_screen_off_row(u16 off) { return off / MAX_COLS; }
+static inline uint8_t get_screen_off_row(uint16_t off) { return off / MAX_COLS; }
 
-static inline u8 get_screen_off_col(u16 off) { return off % MAX_COLS; }
+static inline uint8_t get_screen_off_col(uint16_t off) { return off % MAX_COLS; }
 
-static inline u16 cell_add_to_screen_off(char *addr) {
+static inline uint16_t cell_add_to_screen_off(char *addr) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpointer-to-int-cast"
-  return (u16)(addr - VGA_BUFFER_ADDR) / 2;
+  return (uint16_t)(addr - VGA_BUFFER_ADDR) / 2;
 #pragma GCC diagnostic pop
 }
 
 void clear_screen() {
-  u16 screen_size = MAX_ROWS * MAX_COLS;
+  uint16_t screen_size = MAX_ROWS * MAX_COLS;
 
   for (int i = 0; i < screen_size; i++) {
     char *curr_cell_addr = (char *)VGA_BUFFER_ADDR + i * 2;
@@ -72,12 +73,12 @@ void scroll_screen() {
   }
 }
 
-void kprint_at(u8 start_row, u8 start_col, char *str, u8 style) {
+void kprint_at(uint8_t start_row, uint8_t start_col, char *str, uint8_t style) {
   char *curr_cell_addr = get_vga_addr_from(start_row, start_col);
 
   while (*str) {
     if (*str == '\n') {
-      u16 curr_off = cell_add_to_screen_off(curr_cell_addr);
+      uint16_t curr_off = cell_add_to_screen_off(curr_cell_addr);
       curr_cell_addr = get_vga_addr_from(get_screen_off_row(curr_off) + 1, 0);
     }
     else {
@@ -97,16 +98,14 @@ void kprint_at(u8 start_row, u8 start_col, char *str, u8 style) {
   set_cursor_screen_off(cell_add_to_screen_off(curr_cell_addr));
 }
 
-void kprint(char *str, u8 style) {
-  u16 curr_off = get_cursor_screen_off();
+void kprint(char *str, uint8_t style) {
+  uint16_t curr_off = get_cursor_screen_off();
   kprint_at(get_screen_off_row(curr_off), get_screen_off_col(curr_off), str, style);
 }
 
-void kprint_default(char *str) {
-  kprint(str, VGA_DEFAULT_STYLE);
-}
+void kprint_default(char *str) { kprint(str, VGA_DEFAULT_STYLE); }
 
-void kprint_dec(u32 num, u8 style) {
+void kprint_dec(uint32_t num, uint8_t style) {
   char str[11];  // maximum 10 digits + null
   int i = 0;
 
@@ -126,6 +125,4 @@ void kprint_dec(u32 num, u8 style) {
   kprint(str, style);
 }
 
-void kprint_dec_default(u32 num) {
-  kprint_dec(num, VGA_DEFAULT_STYLE);
-}
+void kprint_dec_default(uint32_t num) { kprint_dec(num, VGA_DEFAULT_STYLE); }

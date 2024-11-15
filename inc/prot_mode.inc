@@ -22,4 +22,4 @@ pm_init:
 
   jmp KERNEL_START_ADDR
 
-%include "gdt.S"
+%include "gdt.inc"

@@ -1,57 +1,37 @@
 OUT_DIR := build
-SRC_DIR := src
-OBJS_DIR := $(OUT_DIR)/objs
-BIN_DIR := $(OUT_DIR)/bin
-INCLUDE_DIR := include
-CC := x86_64-elf-gcc
-CFLAGS := -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
-	  -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -c \
-	  -I$(INCLUDE_DIR)/drivers -I$(INCLUDE_DIR)/lib -I$(INCLUDE_DIR)/kernel -std=c11
+KERNEL_SOURCES := src/kinit.S src/kmain.c src/utils.c src/ports.c src/vga_screen.c \
+									src/idt.c src/isr.c src/isr_routines.S
+BOOT_FILE := src/boot.S
 
-LD := x86_64-elf-ld
-LDFLAGS := -T $(SRC_DIR)/kernel/link.ld
+CC := i686-elf-gcc
+CFLAGS := -ffreestanding -nostdlib -Iinc -c
 AS := nasm
-AS_ELF_FLAGS := -f elf -i$(INCLUDE_DIR)/bootloader
-AS_BIN_FLAGS := -f bin -i$(INCLUDE_DIR)/bootloader
+ASFLAGS := -f elf -Iinc
+ASFLAGS_BIN := -f bin -Iinc
+LD := i686-elf-ld
+LDFLAGS := -T link.ld -Map $(OUT_DIR)/kernel.map
 
-BOOTLOADER_SOURCES := $(wildcard $(SRC_DIR)/bootloader/*.S) \
-		      $(wildcard $(SRC_DIR)/bootloader/*.c)
+$(shell mkdir -p $(OUT_DIR))
 
-KERNEL_SOURCES := $(wildcard $(SRC_DIR)/kernel/*.S) \
-		  $(wildcard $(SRC_DIR)/kernel/*.c) \
-		  $(wildcard $(SRC_DIR)/drivers/*.c) \
-			$(wildcard $(SRC_DIR)/lib/*.c)
+OBJS := $(patsubst src/%.c,$(OUT_DIR)/%.o,$(filter %.c,$(KERNEL_SOURCES))) \
+				$(patsubst src/%.S,$(OUT_DIR)/%.o,$(filter %.S,$(KERNEL_SOURCES)))
 
-BOOTLOADER_BIN := $(BIN_DIR)/bootloader.bin
-KERNEL_BIN := $(BIN_DIR)/kernel.bin
-IMG := $(OUT_DIR)/ssos.img
+all: $(OUT_DIR)/ssos.img
 
-KERNEL_OBJS := $(patsubst $(SRC_DIR)/%, $(OBJS_DIR)/%.o, $(KERNEL_SOURCES))
-BOOTLOADER_OBJS := $(patsubst $(SRC_DIR)/%, $(OBJS_DIR)/%.o, $(BOOTLOADER_SOURCES))
-
-.PHONY: all clean
-
-all: $(IMG)
-
-$(BOOTLOADER_BIN): $(BOOTLOADER_SOURCES)
-	@mkdir -p $(BIN_DIR)
-	$(AS) $(AS_BIN_FLAGS) -o $@ $(SRC_DIR)/bootloader/start.S
-
-$(OBJS_DIR)/%.S.o: $(SRC_DIR)/%.S
-	@mkdir -p $(dir $@)
-	$(AS) $(AS_ELF_FLAGS) -o $@ $<
-
-$(OBJS_DIR)/%.c.o: $(SRC_DIR)/%.c
-	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -o $@ $<
-
-$(KERNEL_BIN): $(KERNEL_OBJS)
-	@mkdir -p $(BIN_DIR)
-	$(LD) $(LDFLAGS) -o $@ $^
-
-$(IMG): $(BOOTLOADER_BIN) $(KERNEL_BIN)
-	@mkdir -p $(OUT_DIR)
+$(OUT_DIR)/ssos.img: $(OUT_DIR)/boot.bin $(OUT_DIR)/kernel.bin
 	cat $^ > $@
 
+$(OUT_DIR)/kernel.bin: $(OBJS)
+	$(LD) $(LDFLAGS) -o $@ $^
+
+$(OUT_DIR)/%.o: src/%.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+$(OUT_DIR)/%.o: src/%.S
+	$(AS) $(ASFLAGS) -o $@ $<
+
+$(OUT_DIR)/boot.bin: $(BOOT_FILE)
+	$(AS) $(ASFLAGS_BIN) -o $@ $<
+
 clean:
-	rm -rf $(OUT_DIR)/*
+	rm -rf $(OUT_DIR)

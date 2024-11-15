@@ -1,6 +1,6 @@
 #ifndef SCREEN_H
 #define SCREEN_H
-#include "types.h"
+#include <stdint.h>
 
 #define VGA_GET_STYLE(fg, bg) (fg | bg << 4)
 #define VGA_DEFAULT_STYLE VGA_GET_STYLE(VGA_WHITE, VGA_BLACK)
@@ -25,9 +25,9 @@ enum VGAColor {
 };
 
 void clear_screen();
-void kprint_at(u8 start_row, u8 start_col, char *str, u8 style);
-void kprint(char *str, u8 style);
+void kprint_at(uint8_t start_row, uint8_t start_col, char *str, uint8_t style);
+void kprint(char *str, uint8_t style);
 void kprint_default(char *str);
-void kprint_dec(u32 num, u8 style);
-void kprint_dec_default(u32 num);
+void kprint_dec(uint32_t num, uint8_t style);
+void kprint_dec_default(uint32_t num);
 #endif // SCREEN_H

@@ -1,21 +1,23 @@
 #include "ports.h"
 
-u8 port_byte_in(u16 port) {
-  u8 result;
+#include <stdint.h>
+
+uint8_t port_byte_in(uint16_t port) {
+  uint8_t result;
   __asm__("in %%dx, %%al" : "=a"(result) : "d"(port));
   return result;
 }
 
-void port_byte_out(u16 port, u8 byte) {
+void port_byte_out(uint16_t port, uint8_t byte) {
   __asm__("out %%al, %%dx" : : "a"(byte), "d"(port));
 }
 
-u16 port_word_in(u16 port) {
-  u16 result;
+uint16_t port_word_in(uint16_t port) {
+  uint16_t result;
   __asm__("in %%dx, %%ax" : "=a"(result) : "d"(port));
   return result;
 }
 
-void port_word_out(u16 port, u16 word) {
+void port_word_out(uint16_t port, uint16_t word) {
   __asm__("out %%ax, %%dx" : : "a"(word), "d"(port));
 }

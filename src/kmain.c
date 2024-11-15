@@ -3,7 +3,7 @@
 
 void kmain() {
   clear_screen();
-  init_idt();
+  // init_idt();
   for (;;) {
   }  // never return
 }
