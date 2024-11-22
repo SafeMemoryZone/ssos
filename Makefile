@@ -1,15 +1,15 @@
 OUT_DIR := build
 KERNEL_SOURCES := src/kinit.S src/kmain.c src/utils.c src/ports.c src/vga_screen.c \
-									src/idt.c src/isr.c src/isr_routines.S
+									src/idt.c src/irq_handler.c src/isr.S
 BOOT_FILE := src/boot.S
 
 CC := i686-elf-gcc
-CFLAGS := -ffreestanding -nostdlib -Iinc -c
+CFLAGS := -ffreestanding -nostdlib -Iinc -c -O2
 AS := nasm
 ASFLAGS := -f elf -Iinc
 ASFLAGS_BIN := -f bin -Iinc
-LD := i686-elf-ld
-LDFLAGS := -T link.ld -Map $(OUT_DIR)/kernel.map
+LD := i686-elf-gcc
+LDFLAGS := -T link.ld -ffreestanding -nostdlib -lgcc -O2
 
 $(shell mkdir -p $(OUT_DIR))
 

@@ -37,11 +37,9 @@ extern void isr30();
 extern void isr31();
 
 typedef struct {
-  uint32_t ds;
-  uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax;
-  uint32_t int_num, err_code;
-  uint32_t eip, cs, eflags, useresp, ss;
-} cpu_ctx_t;
+  uint16_t gs, fs, es, ds;
+  uint32_t edi, esi, ebp, ignored_val, ebx, edx, ecx, eax, int_num, err_code, eflags, cs, eip;
+} interrupt_frame_t;
 
-void install_isrs();
+void install_irq_handlers();
 #endif  // ISR_H

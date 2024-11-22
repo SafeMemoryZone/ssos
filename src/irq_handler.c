@@ -1,8 +1,8 @@
-#include "isr.h"
+#include "irq_handler.h"
 #include "idt.h"
 #include "vga_screen.h"
 
-void install_isrs() {
+void install_irq_handlers() {
   idt[0] = make_idt_entry((uintptr_t)isr0);
   idt[1] = make_idt_entry((uintptr_t)isr1);
   idt[2] = make_idt_entry((uintptr_t)isr2);
@@ -73,11 +73,11 @@ char *exception_messages[] = {
 };
 
 
-void default_isr_handler(cpu_ctx_t ctx) {
+void irq_handler(interrupt_frame_t *frame) {
   kprint("CPU Exception: ", VGA_GET_STYLE(VGA_RED, VGA_BLACK));
-  kprint(exception_messages[ctx.int_num], VGA_GET_STYLE(VGA_RED, VGA_BLACK));
+  kprint(exception_messages[frame->int_num], VGA_GET_STYLE(VGA_RED, VGA_BLACK));
   kprint(" (", VGA_GET_STYLE(VGA_RED, VGA_BLACK));
-  kprint_dec(ctx.err_code, VGA_GET_STYLE(VGA_RED, VGA_BLACK));
+  kprint_dec(frame->err_code, VGA_GET_STYLE(VGA_RED, VGA_BLACK));
   kprint(")", VGA_GET_STYLE(VGA_RED, VGA_BLACK));
   kprint("\n", VGA_DEFAULT_STYLE);
 }

@@ -6,13 +6,12 @@ KERNEL_START_ADDR equ 0x1000
 BOOT_DRIVE_NUMBER equ 0x80
 
 start:
-  cli
+  cli ; disable interrupts until idt is setup
   xor ax, ax
   mov ds, ax
   mov es, ax
   mov ss, ax
   mov sp, STACK_BASE
-  sti
 
   mov dl, BOOT_DRIVE_NUMBER
   call load_kernel
@@ -20,17 +19,15 @@ start:
 
   jmp $
 
-  ; params:
-  ;  dl - boot drive number
 load_kernel:
   pusha
 
-  mov ah, 0x02 ; 0x02 = 'read'
-  mov al, 16 ; 16 sectors
-  mov cl, 2 ; start sector
-  xor ch, ch ; cylinder
-  xor dh, dh ; head
-  mov bx, KERNEL_START_ADDR ; es:bx pointer to store buffer
+  mov ah, 0x02
+  mov al, 16
+  mov cl, 2
+  xor ch, ch
+  xor dh, dh
+  mov bx, KERNEL_START_ADDR
 
   int 0x13
 

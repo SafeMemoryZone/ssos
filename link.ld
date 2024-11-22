@@ -6,17 +6,17 @@ SECTIONS
   . = 0x1000;
 
   .text : {
-    *(.kinit*)
-    *(.text*)
-    *(.rodata*)
+    KEEP(*(.kinit))
+    *(.text)
   }
 
-  .data : {
-    *(.data*)
+  .rodata ALIGN(16) : {
+    *(.rodata)
   }
 
-  .bss : {
-    *(.bss*)
-    *(COMMON)
+  .data ALIGN(16) : {
+    *(.data)
+    *(.bss)
+    *(.COMMON)
   }
 }

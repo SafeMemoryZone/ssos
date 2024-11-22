@@ -19,3 +19,5 @@ void reverse_str(char *str) {
     last_idx--;
   }
 }
+
+// TODO: implement memset, memcpy, memmove and memcmp
