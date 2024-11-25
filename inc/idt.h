@@ -14,7 +14,7 @@ typedef struct {
 
 typedef struct {
   uint16_t limit;
-  uint32_t base;
+  uintptr_t base;
 } __attribute__((packed)) idt_register_t;
 
 extern idt_entry_t idt[IDT_ENTRIES_COUNT];

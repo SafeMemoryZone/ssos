@@ -1,4 +1,5 @@
 #include "irq_handler.h"
+
 #include "idt.h"
 #include "vga_screen.h"
 
@@ -37,47 +38,45 @@ void install_irq_handlers() {
   idt[31] = make_idt_entry((uintptr_t)isr31);
 }
 
-char *exception_messages[] = {
-  "Division By Zero",
-  "Debug",
-  "Non Maskable Interrupt",
-  "Breakpoint",
-  "Into Detected Overflow",
-  "Out of Bounds",
-  "Invalid Opcode",
-  "No Coprocessor",
-  "Double Fault",
-  "Coprocessor Segment Overrun",
-  "Bad TSS",
-  "Segment Not Present",
-  "Stack Fault",
-  "General Protection Fault",
-  "Page Fault",
-  "Unknown Interrupt",
-  "Coprocessor Fault",
-  "Alignment Check",
-  "Machine Check",
-  "Reserved",
-  "Reserved",
-  "Reserved",
-  "Reserved",
-  "Reserved",
-  "Reserved",
-  "Reserved",
-  "Reserved",
-  "Reserved",
-  "Reserved",
-  "Reserved",
-  "Reserved",
-  "Reserved"
-};
-
+char *exception_messages[] = {"Division By Zero",
+                              "Debug",
+                              "Non Maskable Interrupt",
+                              "Breakpoint",
+                              "Overflow",
+                              "Bound Range Exceeded",
+                              "Invalid Opcode",
+                              "Device Not Available",
+                              "Double Fault",
+                              "Coprocessor Segment Overrun (Deprecated)",
+                              "Invalid TSS",
+                              "Segment Not Present",
+                              "Stack-Segment Fault",
+                              "General Protection Fault",
+                              "Page Fault",
+                              "Reserved",
+                              "x87 Floating-Point Exception",
+                              "Alignment Check",
+                              "Machine Check",
+                              "SIMD Floating-Point Exception",
+                              "Virtualization Exception",
+                              "Control Protection Exception",
+                              "Reserved",
+                              "Reserved",
+                              "Reserved",
+                              "Reserved",
+                              "Reserved",
+                              "Reserved",
+                              "Hypervisor Injection Exception",
+                              "VMM Communication Exception",
+                              "Security Exception",
+                              "Reserved"};
 
 void irq_handler(interrupt_frame_t *frame) {
-  kprint("CPU Exception: ", VGA_GET_STYLE(VGA_RED, VGA_BLACK));
+  kprint("Got signal: ", VGA_GET_STYLE(VGA_RED, VGA_BLACK));
   kprint(exception_messages[frame->int_num], VGA_GET_STYLE(VGA_RED, VGA_BLACK));
   kprint(" (", VGA_GET_STYLE(VGA_RED, VGA_BLACK));
   kprint_dec(frame->err_code, VGA_GET_STYLE(VGA_RED, VGA_BLACK));
   kprint(")", VGA_GET_STYLE(VGA_RED, VGA_BLACK));
   kprint("\n", VGA_DEFAULT_STYLE);
+  for(;;);
 }

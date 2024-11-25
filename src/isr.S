@@ -34,25 +34,31 @@
 
 isr_common_stub:
     pusha
-    push ds
-    push es
-    push fs
-    push gs
+
+    mov ax, ds
+    push eax
+
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
 
     cld
+
     lea eax, [esp]
     push eax
     call irq_handler
     add esp, 4
 
-    pop gs
-    pop fs
-    pop es
-    pop ds
+    pop eax
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
     popa
 
     add esp, 8
-
     iret
 
 %macro isr_with_err 1

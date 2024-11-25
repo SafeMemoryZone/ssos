@@ -37,8 +37,20 @@ extern void isr30();
 extern void isr31();
 
 typedef struct {
-  uint16_t gs, fs, es, ds;
-  uint32_t edi, esi, ebp, ignored_val, ebx, edx, ecx, eax, int_num, err_code, eflags, cs, eip;
+  uint32_t user_ds;
+  uint32_t edi;
+  uint32_t esi;
+  uint32_t ebp;
+  uint32_t ignored_val;
+  uint32_t ebx;
+  uint32_t edx;
+  uint32_t ecx;
+  uint32_t eax;
+  uint32_t int_num;
+  uint32_t err_code;
+  uint32_t eip;
+  uint32_t cs;
+  uint32_t eflags;
 } interrupt_frame_t;
 
 void install_irq_handlers();
