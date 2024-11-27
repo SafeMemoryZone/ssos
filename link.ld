@@ -20,7 +20,7 @@ SECTIONS
   .bss ALIGN(16) : {
     __bss_start = .;
     *(.bss)
-    *(.COMMON)
+    *(COMMON)
     . = ALIGN(4);
     __bss_end = .;
   }
