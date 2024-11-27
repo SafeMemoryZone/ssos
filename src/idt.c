@@ -21,7 +21,7 @@ void load_idt() {
   idt_reg.base = (uintptr_t)&idt;
   idt_reg.limit = IDT_ENTRIES_COUNT * sizeof(idt_entry_t) - 1;
 
-  __asm__ __volatile__("lidtl (%0)" : : "r"(&idt_reg));
+  __asm__ __volatile__("lidtl %0" : : "m"(idt_reg) : "memory");
   __asm__ __volatile__("sti");
 }
 
