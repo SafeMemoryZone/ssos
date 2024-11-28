@@ -1,5 +1,4 @@
 ENTRY(_start)
-OUTPUT_FORMAT(binary)
 
 SECTIONS
 {
@@ -7,16 +6,24 @@ SECTIONS
 
   .text : {
     KEEP(*(.kinit))
-    *(.text)
+    *(.text*)
   }
 
   .rodata ALIGN(16) : {
-    *(.rodata)
+    *(.rodata*)
   }
 
   .data ALIGN(16) : {
     *(.data)
-    *(.bss)
-    *(.COMMON)
   }
+
+  .bss ALIGN(16) : {
+    __bss_start = .;
+    *(.bss)
+    *(COMMON)
+    . = ALIGN(4);
+    __bss_end = .;
+  }
+  /* Size of .bss in DWORDS */ 
+  __bss_sized = (__bss_end - __bss_start) / 4;
 }

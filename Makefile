@@ -4,12 +4,13 @@ KERNEL_SOURCES := src/kinit.S src/kmain.c src/utils.c src/ports.c src/vga_screen
 BOOT_FILE := src/boot.S
 
 CC := i686-elf-gcc
-CFLAGS := -ffreestanding -nostdlib -Isrc -c -O2
+CFLAGS := -g -ffreestanding -nostdlib -Isrc -c -O2
 AS := nasm
-ASFLAGS := -f elf -Isrc
+ASFLAGS := -g -f elf -Isrc
 ASFLAGS_BIN := -f bin -Isrc
 LD := i686-elf-gcc
 LDFLAGS := -T link.ld -ffreestanding -nostdlib -lgcc -O2
+OBJCOPY := i686-elf-objcopy
 
 $(shell mkdir -p $(OUT_DIR))
 
@@ -21,7 +22,10 @@ all: $(OUT_DIR)/ssos.img
 $(OUT_DIR)/ssos.img: $(OUT_DIR)/boot.bin $(OUT_DIR)/kernel.bin
 	cat $^ > $@
 
-$(OUT_DIR)/kernel.bin: $(OBJS)
+$(OUT_DIR)/kernel.bin: $(OUT_DIR)/kernel.elf
+	$(OBJCOPY) -O binary $^ $@
+
+$(OUT_DIR)/kernel.elf: $(OBJS)
 	$(LD) $(LDFLAGS) -o $@ $^
 
 $(OUT_DIR)/%.o: src/%.c
