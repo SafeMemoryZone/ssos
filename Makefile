@@ -4,10 +4,10 @@ KERNEL_SOURCES := src/kinit.S src/kmain.c src/utils.c src/ports.c src/vga_screen
 BOOT_FILE := src/boot.S
 
 CC := i686-elf-gcc
-CFLAGS := -g -ffreestanding -nostdlib -Iinc -c -O2
+CFLAGS := -g -ffreestanding -nostdlib -Isrc -c -O2
 AS := nasm
-ASFLAGS := -g -f elf -Iinc
-ASFLAGS_BIN := -f bin -Iinc
+ASFLAGS := -g -f elf -Isrc
+ASFLAGS_BIN := -f bin -Isrc
 LD := i686-elf-gcc
 LDFLAGS := -T link.ld -ffreestanding -nostdlib -lgcc -O2
 OBJCOPY := i686-elf-objcopy
