@@ -1,14 +1,17 @@
 #include <stddef.h>
-#include <stdint.h>
 
-#include "idt.h"
-#include "vga_screen.h"
+#include "limine.h"
+#include "misc.h"
 
-#define KERNEL_STACK_SIZE 4096
-__attribute__((aligned(16))) uint8_t kernel_stack[KERNEL_STACK_SIZE];
+__attribute__((used,
+               section(".limine_requests_start"))) static volatile LIMINE_REQUESTS_START_MARKER;
+__attribute__((used, section(".limine_requests_end"))) static volatile LIMINE_REQUESTS_END_MARKER;
+__attribute__((used, section(".limine_requests"))) static volatile LIMINE_BASE_REVISION(3);
 
-void kmain() {
-  clear_screen();
-  init_idt();
-  for (;;);
+void kmain(void) {
+	if (!LIMINE_BASE_REVISION_SUPPORTED) {
+		stop();
+	}
+
+	stop();
 }
