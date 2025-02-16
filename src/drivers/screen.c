@@ -184,7 +184,7 @@ void clear_screen(void) {
 	}
 }
 
-void scroll_screen(int pixel_count) {
+void scroll_screen(unsigned int pixel_count) {
 	assert(pixel_count <= FRAMEBUFFER->height,
 	       "scroll_screen() failed because pixel_count > screen height");
 	size_t bytes_to_move = (FRAMEBUFFER->height - pixel_count) * FRAMEBUFFER->pitch;
@@ -194,15 +194,13 @@ void scroll_screen(int pixel_count) {
 }
 
 void kputch(char ch) {
-	assert(ch <= 0x7f, "kputch() failed because ch > 0x7f");
-
 	if (ch == '\n') {
 		goto do_newline;
 	}
 
 	for (int row_idx = 0; row_idx < FONT_HEIGHT; row_idx++) {
 		for (int col_idx = 0; col_idx < FONT_WIDTH; col_idx++) {
-			int bit = font8x8[ch][row_idx] & (1 << col_idx);
+			int bit = font8x8[(int)ch][row_idx] & (1 << col_idx);
 
 			if (bit) {
 				for (int dx = 0; dx < curr_scale; dx++) {

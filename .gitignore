@@ -54,3 +54,9 @@ dkms.conf
 # Others
 build/
 .cache/
+compile_commands.json
+bin/
+iso_root/
+limine/
+obj/
+image.iso

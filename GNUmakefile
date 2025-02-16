@@ -43,7 +43,9 @@ override CPPFLAGS := \
 # Internal nasm flags that should not be changed by the user.
 override NASMFLAGS += \
     -Wall \
-    -f elf64
+    -f elf64 \
+	-w-reloc-rel-dword \
+	-w-reloc-abs-qword
 
 # Internal linker flags that should not be changed by the user.
 override LDFLAGS += \

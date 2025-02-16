@@ -3,6 +3,7 @@
 #include "drivers/screen.h"
 #include "limine.h"
 #include "misc.h"
+#include "idt.h"
 
 __attribute__((used,
                section(".limine_requests_start"))) static volatile LIMINE_REQUESTS_START_MARKER;
@@ -24,8 +25,7 @@ void kmain(void) {
 
 	init_screen(framebuffer_request.response->framebuffers[0]);
     set_font_scale(2);
-
-    kprint("ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz!@#$%^&*();'");
+    init_idt();
 
 	stop();
 }

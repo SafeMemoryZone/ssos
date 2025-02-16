@@ -19,5 +19,5 @@ void kputch(char ch);
 void kprint(char *str);
 
 // view manipulation
-void scroll_screen(int pixel_count);
+void scroll_screen(unsigned int pixel_count);
 #endif  // SCREEN_H
