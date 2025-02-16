@@ -23,6 +23,9 @@ void kmain(void) {
 	}
 
 	init_screen(framebuffer_request.response->framebuffers[0]);
+    set_font_scale(2);
+
+    kprint("ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz!@#$%^&*();'");
 
 	stop();
 }
