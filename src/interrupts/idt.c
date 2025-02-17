@@ -5,7 +5,7 @@
 #include "../misc.h"
 
 #define IDT_MAX_DESCRIPTORS 256
-#define GDT_OFFSET_KERNEL_CODE 0x38
+#define GDT_OFFSET_KERNEL_CODE 0x28
 
 // https://wiki.osdev.org/Interrupts_Tutorial
 typedef struct {
@@ -48,9 +48,9 @@ void init_idt() {
 	idtr.limit = (uint16_t)sizeof(idt_entry_t) * IDT_MAX_DESCRIPTORS - 1;
 
 	for (uint8_t vector = 0; vector < 32; vector++) {
-		idt_set_descriptor(vector, isr_stub_table[vector], 0x8e); // 0x8e = interrupt gate
+		idt_set_descriptor(vector, isr_stub_table[vector], 0x8e);  // 0x8e = interrupt gate
 	}
 
-	__asm__ volatile("lidt %0" : : "m"(idtr));
-	__asm__ volatile("sti");
+	__asm__ __volatile__("lidt %0" : : "m"(idtr));
+	__asm__ __volatile__("sti");
 }

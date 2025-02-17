@@ -2,18 +2,12 @@
 
 #include <stdint.h>
 
-uint8_t inb(uint16_t port) {
-	uint8_t result;
-	__asm__("in %%dx, %%al" : "=a"(result) : "d"(port));
-	return result;
+inline uint8_t inb(uint16_t port) {
+	uint8_t ret;
+	__asm__ __volatile__("inb %w1, %b0" : "=a"(ret) : "Nd"(port) : "memory");
+	return ret;
 }
 
-void outb(uint16_t port, uint8_t data) { __asm__("out %%al, %%dx" : : "a"(data), "d"(port)); }
-
-uint16_t inw(uint16_t port) {
-	unsigned short result;
-	__asm__("in %%dx, %%ax" : "=a"(result) : "d"(port));
-	return result;
+inline void outb(uint16_t port, uint8_t val) {
+	__asm__ __volatile__("outb %b0, %w1" : : "a"(val), "Nd"(port) : "memory");
 }
-
-void outw(uint16_t port, uint16_t data) { __asm__("out %%ax, %%dx" : : "a"(data), "d"(port)); }

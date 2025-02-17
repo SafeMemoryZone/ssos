@@ -66,7 +66,7 @@ size_t strlen(const char *str) {
 
 void stop(void) {
 	for (;;) {
-		asm("hlt");
+		__asm__ __volatile__("hlt");
 	}
 }
 

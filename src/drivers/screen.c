@@ -195,7 +195,7 @@ void scroll_screen(unsigned int pixel_count) {
 
 void kputch(char ch) {
 	if (ch == '\n') {
-		goto do_newline;
+		goto print_newline;
 	}
 
 	for (int row_idx = 0; row_idx < FONT_HEIGHT; row_idx++) {
@@ -214,7 +214,7 @@ void kputch(char ch) {
 	}
 
 	if (curr_x + FONT_WIDTH * curr_scale >= FRAMEBUFFER->width) {
-	do_newline:
+	print_newline:
 		curr_x = 0;
 
 		if (curr_y + FONT_HEIGHT * curr_scale >= FRAMEBUFFER->height) {
