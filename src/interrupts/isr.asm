@@ -7,6 +7,7 @@ irq_stub_%+%1:
 %macro isr_err_stub 1
 isr_stub_%+%1:
     call exception_handler
+    add rsp, 8 ; Remove error code from stack
     iretq
 %endmacro
 
