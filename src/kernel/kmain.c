@@ -28,6 +28,7 @@ void kmain(void) {
 	set_font_scale(2);
 	init_idt();
     init_PIC();
+    enable_interrupts();
 
 	stop();
 }

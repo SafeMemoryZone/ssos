@@ -48,7 +48,9 @@ static void PIC_remap(int master_off, int slave_off) {
 }
 
 void init_PIC(void) {
-	__asm__ __volatile__("cli");  // disable interrupts
 	PIC_remap(0x20, 0x28);
-	__asm__ __volatile__("sti");  // enable interrupts
+}
+
+void enable_interrupts(void) {
+	__asm__ __volatile__("sti" ::: "memory");  // enable interrupts
 }

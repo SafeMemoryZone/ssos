@@ -42,15 +42,15 @@ void idt_set_descriptor(uint8_t vector, void* isr, uint8_t flags) {
 }
 
 void exception_handler(void) { stop(); }
+void irq_handler(void) { }
 
 void init_idt() {
 	idtr.base = (uintptr_t)&idt[0];
 	idtr.limit = (uint16_t)sizeof(idt_entry_t) * IDT_MAX_DESCRIPTORS - 1;
 
-	for (uint8_t vector = 0; vector < 32; vector++) {
+	for (uint8_t vector = 0; vector < 48; vector++) {
 		idt_set_descriptor(vector, isr_stub_table[vector], 0x8e);  // 0x8e = interrupt gate
 	}
 
-	__asm__ __volatile__("lidt %0" : : "m"(idtr));
-	__asm__ __volatile__("sti");
+	__asm__ __volatile__("lidt %0" : : "m"(idtr) : "memory");
 }
