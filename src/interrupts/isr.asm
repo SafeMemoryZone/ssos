@@ -1,5 +1,5 @@
 %macro irq_stub 1
-isr_stub_%+%1:
+irq_stub_%+%1:
     call irq_handler
     iretq
 %endmacro
@@ -17,6 +17,7 @@ isr_stub_%+%1:
 %endmacro
 
 extern exception_handler
+extern irq_handler
 
 isr_no_err_stub 0
 isr_no_err_stub 1
@@ -72,7 +73,13 @@ irq_stub 47
 global isr_stub_table
 isr_stub_table:
 %assign i 0 
-%rep    48
+%rep    32
     dq isr_stub_%+i
+%assign i i+1 
+%endrep
+
+%assign i 32 
+%rep    16
+    dq irq_stub_%+i
 %assign i i+1 
 %endrep
