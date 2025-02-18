@@ -21,7 +21,7 @@ typedef struct {
 
 typedef struct {
 	uint16_t limit;
-	uint32_t base;
+	uintptr_t base;
 } __attribute__((packed)) idtr_t;
 
 __attribute__((aligned(0x10))) static idt_entry_t idt[IDT_MAX_DESCRIPTORS];
