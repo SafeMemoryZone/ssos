@@ -20,6 +20,29 @@ typedef struct {
 } __attribute__((packed)) idt_entry_t;
 
 typedef struct {
+    uint64_t r15;
+    uint64_t r14;
+    uint64_t r13;
+    uint64_t r12;
+    uint64_t r11;
+    uint64_t r10;
+    uint64_t r9;
+    uint64_t r8;
+    uint64_t rdi;
+    uint64_t rsi;
+    uint64_t rdx;
+    uint64_t rcx;
+    uint64_t rbx;
+    uint64_t rax;
+	uint64_t error_code;  // Set to 0 when it's unavailable
+	uint64_t rip;
+	uint64_t cs;
+	uint64_t rflags;
+	uint64_t rsp;
+	uint64_t ss;
+} __attribute__((packed)) interrupt_frame_t;
+
+typedef struct {
 	uint16_t limit;
 	uintptr_t base;
 } __attribute__((packed)) idtr_t;
@@ -41,8 +64,8 @@ void idt_set_descriptor(uint8_t vector, void* isr, uint8_t flags) {
 	descriptor->reserved = 0;
 }
 
-void exception_handler(void) { stop(); }
-void irq_handler(void) { }
+void exception_handler(interrupt_frame_t *frame) {}
+void irq_handler(interrupt_frame_t *frame) {}
 
 void init_idt() {
 	idtr.base = (uintptr_t)&idt[0];

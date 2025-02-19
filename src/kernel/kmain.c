@@ -27,8 +27,8 @@ void kmain(void) {
 	init_screen(framebuffer_request.response->framebuffers[0]);
 	set_font_scale(2);
 	init_idt();
-    init_PIC();
-    enable_interrupts();
+	init_PIC();
+	enable_interrupts();
 
 	stop();
 }

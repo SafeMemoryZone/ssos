@@ -52,5 +52,5 @@ void init_PIC(void) {
 }
 
 void enable_interrupts(void) {
-	__asm__ __volatile__("sti" ::: "memory");  // enable interrupts
+	__asm__ __volatile__("sti" ::: "memory");
 }
