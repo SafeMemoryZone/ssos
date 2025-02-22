@@ -17,7 +17,7 @@ irq_stub_%+%1:
     push r15
 
     mov rdi, rsp
-    mov rsi, %1 # IRQ number
+    mov rsi, %1 ; IRQ number
     call irq_handler
 
     pop r15
@@ -57,7 +57,7 @@ isr_stub_%+%1:
     push r15
 
     mov rdi, rsp
-    mov rsi, %1 # Interrupt number
+    mov rsi, %1 ; Interrupt number
     call exception_handler
 
     pop r15
@@ -97,7 +97,7 @@ isr_stub_%+%1:
     push r15
     
     mov rdi, rsp
-    mov rsi, %1 # Interrupt number
+    mov rsi, %1 ; Interrupt number
     call exception_handler
 
     pop r15
@@ -180,7 +180,7 @@ isr_stub_table:
 %assign i i+1 
 %endrep
 
-%assign i 32 
+%assign i 0 
 %rep 16
     dq irq_stub_%+i
 %assign i i+1 

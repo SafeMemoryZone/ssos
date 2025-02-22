@@ -5,7 +5,7 @@
 
 typedef enum {
 	// Special keys
-	KEY_NONE,
+	KEY_NONE = 0,
 	KEY_UNKNOWN,
 
 	// Function keys

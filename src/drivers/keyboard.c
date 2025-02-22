@@ -5,10 +5,12 @@
 #include "interrupts/idt.h"
 #include "misc.h"
 #include "ports.h"
+#include "screen.h"
 
 #define MAX_RETRY_COUNT 3
 #define MAX_KEYBOARD_BUFF_SIZE 24
 #define DEFAULT_SCANCODE_SET 2
+#define PAUSE_SEQ_LEN 8
 
 #define PS2_KEYBOARD_DATA 0x60
 #define PS2_KEYBOARD_COMMAND 0x64
@@ -31,7 +33,7 @@ static void send_init_command(void) {
 		if (i++ == MAX_RETRY_COUNT) {
 			stop();
 		}
-		outb(PS2_KEYBOARD_COMMAND, COMMAND_ENABLE_SCANNING);
+		outb(PS2_KEYBOARD_DATA, COMMAND_ENABLE_SCANNING);
 		io_wait();
 		resp = inb(PS2_KEYBOARD_DATA);
 	} while (resp == RESP_RESEND);
@@ -45,8 +47,8 @@ static void set_default_scancode_set(void) {
 		if (i++ == MAX_RETRY_COUNT) {
 			stop();
 		}
-		outb(PS2_KEYBOARD_COMMAND, COMMAND_SET_SCANCODE_SET);
-		outb(PS2_KEYBOARD_COMMAND, DEFAULT_SCANCODE_SET);
+		outb(PS2_KEYBOARD_DATA, COMMAND_SET_SCANCODE_SET);
+		outb(PS2_KEYBOARD_DATA, DEFAULT_SCANCODE_SET);
 		io_wait();
 		resp = inb(PS2_KEYBOARD_DATA);
 	} while (resp == RESP_RESEND);
@@ -56,8 +58,7 @@ static keyboard_event_t scancode_to_keyboard_event(uint8_t scancode) {
 	static bool is_extended = false;
 	static bool is_released = false;
 
-	static int pause_index = 0;
-	const int PAUSE_SEQ_LEN = 8;
+	static unsigned int pause_index = 0;
 	static const uint8_t pause_seq[8] = {0xE1, 0x14, 0x77, 0xE1, 0xF0, 0x14, 0xF0, 0x77};
 
 	static bool print_screen_pressed_seq = false;
@@ -528,7 +529,8 @@ void init_keyboard(void) {
 }
 
 keyboard_event_t consume_event(void) {
-    int index = ((curr_keyboard_event_buff_idx - curr_buff_size + 1) + MAX_KEYBOARD_BUFF_SIZE) % MAX_KEYBOARD_BUFF_SIZE;
+	int index = ((curr_keyboard_event_buff_idx - curr_buff_size) + MAX_KEYBOARD_BUFF_SIZE) %
+	            MAX_KEYBOARD_BUFF_SIZE;
 	keyboard_event_t event = keyboard_events_buff[index];
 	curr_buff_size--;
 	return event;
