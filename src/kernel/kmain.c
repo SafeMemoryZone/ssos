@@ -1,5 +1,6 @@
 #include <stddef.h>
 
+#include "drivers/keyboard.h"
 #include "drivers/screen.h"
 #include "interrupts/idt.h"
 #include "interrupts/pic.h"
@@ -29,6 +30,7 @@ void kmain(void) {
 	init_idt();
 	init_PIC();
 	enable_interrupts();
+	init_keyboard();
 
 	stop();
 }

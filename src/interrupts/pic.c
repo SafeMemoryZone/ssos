@@ -21,7 +21,7 @@
 #define ICW4_BUF_MASTER 0x0C
 #define ICW4_SFNM 0x10
 
-static inline void io_wait(void) { __asm__ __volatile__("outb %%al, $0x80" : : "a"(0)); }
+#define PIC_EOI 0x20  // End-of-interrupt command code
 
 static void PIC_remap(int master_off, int slave_off) {
 	outb(PIC1_COMMAND, ICW1_INIT | ICW1_ICW4);
@@ -47,10 +47,11 @@ static void PIC_remap(int master_off, int slave_off) {
 	outb(PIC2_DATA, 0);
 }
 
-void init_PIC(void) {
-	PIC_remap(0x20, 0x28);
+void PIC_sendEOI(uint8_t irq) {
+	if (irq >= 8) outb(PIC2_COMMAND, PIC_EOI);
+	outb(PIC1_COMMAND, PIC_EOI);
 }
 
-void enable_interrupts(void) {
-	__asm__ __volatile__("sti" ::: "memory");
-}
+void init_PIC(void) { PIC_remap(0x20, 0x28); }
+
+void enable_interrupts(void) { __asm__ __volatile__("sti" ::: "memory"); }

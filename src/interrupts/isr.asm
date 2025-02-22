@@ -17,6 +17,7 @@ irq_stub_%+%1:
     push r15
 
     mov rdi, rsp
+    mov rsi, %1 # IRQ number
     call irq_handler
 
     pop r15
@@ -56,6 +57,7 @@ isr_stub_%+%1:
     push r15
 
     mov rdi, rsp
+    mov rsi, %1 # Interrupt number
     call exception_handler
 
     pop r15
@@ -95,6 +97,7 @@ isr_stub_%+%1:
     push r15
     
     mov rdi, rsp
+    mov rsi, %1 # Interrupt number
     call exception_handler
 
     pop r15
@@ -152,33 +155,33 @@ isr_err_stub    30
 isr_no_err_stub 31
 
 ; IRQ0 to IRQ15
-irq_stub 32
-irq_stub 33
-irq_stub 34
-irq_stub 35
-irq_stub 36
-irq_stub 37
-irq_stub 38
-irq_stub 39
-irq_stub 40
-irq_stub 41
-irq_stub 42
-irq_stub 43
-irq_stub 44
-irq_stub 45
-irq_stub 46
-irq_stub 47
+irq_stub 0
+irq_stub 1
+irq_stub 2
+irq_stub 3
+irq_stub 4
+irq_stub 5
+irq_stub 6
+irq_stub 7
+irq_stub 8
+irq_stub 9
+irq_stub 10
+irq_stub 11
+irq_stub 12
+irq_stub 13
+irq_stub 14
+irq_stub 15
 
 global isr_stub_table
 isr_stub_table:
 %assign i 0 
-%rep    32
+%rep 32
     dq isr_stub_%+i
 %assign i i+1 
 %endrep
 
 %assign i 32 
-%rep    16
+%rep 16
     dq irq_stub_%+i
 %assign i i+1 
 %endrep

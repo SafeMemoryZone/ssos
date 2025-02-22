@@ -11,3 +11,5 @@ inline uint8_t inb(uint16_t port) {
 inline void outb(uint16_t port, uint8_t val) {
 	__asm__ __volatile__("outb %b0, %w1" : : "a"(val), "Nd"(port) : "memory");
 }
+
+inline void io_wait(void) { outb(0x80, 0); }
