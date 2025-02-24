@@ -8,6 +8,7 @@
 #include "paging.h"
 
 #define KERNEL_MEM_ALIGNMENT 16
+#define MEM_BLOCKS_MAX_LEVEL_COUNT 32
 
 void *memcpy(void *dest, const void *src, size_t n) {
 	uint8_t *pdest = (uint8_t *)dest;
@@ -73,8 +74,6 @@ typedef struct mem_block {
 	bool is_free;
 } mem_block_t;
 
-#define MEM_BLOCKS_MAX_LEVEL_COUNT 32
-
 // level 0 is 1 byte granularity
 // level 31 is 2 GiB granularity
 static mem_block_t *mem_blocks[MEM_BLOCKS_MAX_LEVEL_COUNT] = {0};
@@ -108,13 +107,14 @@ void *kmalloc(size_t bytes) {
 		highest_block_size *= 2;
 		highest_level++;
 		mem_blocks[highest_level] = alloc_pages(highest_block_size / 0x1000);
-		mem_blocks[highest_level]->next = NULL;
-		mem_blocks[highest_level]->level = highest_level;
-		mem_blocks[highest_level]->is_free = true;
 
 		if (!mem_blocks[highest_level]) {
 			return NULL;
 		}
+
+		mem_blocks[highest_level]->next = NULL;
+		mem_blocks[highest_level]->level = highest_level;
+		mem_blocks[highest_level]->is_free = true;
 	}
 
 	// Try to find an appropriate block
@@ -125,7 +125,7 @@ void *kmalloc(size_t bytes) {
 		     curr_free_block = curr_free_block->next) {
 			if (curr_free_block->is_free) {
 				curr_free_block->is_free = false;
-				return (uint8_t *)curr_free_block + sizeof(mem_block_t);
+				return (uint8_t *)curr_free_block + meta_size;
 			}
 		}
 	}
@@ -133,15 +133,15 @@ void *kmalloc(size_t bytes) {
 	// Couldn't find a matching block: generate buddies recursively
 	size_t required_level = log2(round_pow2(bytes));
 
-	for (size_t curr_level = highest_level; curr_level >= required_level; curr_level--) {
+	for (int curr_level = highest_level; curr_level >= (int)required_level; curr_level--) {
 		// Take a free page from the current level and split it in half
 
 		for (mem_block_t *curr_free_block = mem_blocks[curr_level]; curr_free_block != NULL;
 		     curr_free_block = curr_free_block->next) {
 			if (curr_free_block->is_free) {
-				if (curr_level == required_level) {
+				if ((size_t)curr_level == required_level) {
 					curr_free_block->is_free = false;
-					return (uint8_t *)curr_free_block + sizeof(mem_block_t);
+					return (uint8_t *)curr_free_block + meta_size;
 				}
 
 				size_t block_size = 1 << curr_level;
@@ -184,7 +184,9 @@ void kfree(void *mem) {
 			while (prev && prev->next != buddy) {
 				prev = prev->next;
 			}
-			if (prev) prev->next = buddy->next;
+			if (prev) {
+				prev->next = buddy->next;
+			}
 		}
 		if (buddy < block) {
 			block = buddy;

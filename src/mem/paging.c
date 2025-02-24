@@ -14,7 +14,8 @@ static uint64_t pages[TOTAL_BUCKET_COUNT] = {0};
 static void *page_base;
 
 void init_page_frame_allocator(struct limine_memmap_entry *mmap_entries, size_t entry_count) {
-	struct limine_memmap_entry *largest_usable_block = NULL;
+	struct limine_memmap_entry largest_usable_block = {0};
+	bool first_block_present = false;
 
 	for (struct limine_memmap_entry *mmap_entry = mmap_entries;
 	     mmap_entry < mmap_entries + entry_count; mmap_entry++) {
@@ -22,7 +23,9 @@ void init_page_frame_allocator(struct limine_memmap_entry *mmap_entries, size_t 
 			uintptr_t region_start = ALIGN_UP(mmap_entry->base, 0x1000);
 			uintptr_t region_end = ALIGN_DOWN(mmap_entry->base + mmap_entry->length, 0x1000);
 
-			if (region_end <= region_start) continue;
+			if (region_end <= region_start) {
+				continue;
+			}
 
 			uintptr_t kstart = ALIGN_UP((uintptr_t)kernel_start, 0x1000);
 			uintptr_t kend = ALIGN_DOWN((uintptr_t)kernel_end, 0x1000);
@@ -42,33 +45,34 @@ void init_page_frame_allocator(struct limine_memmap_entry *mmap_entries, size_t 
 				}
 			}
 
-			if (usable_end <= usable_start + 0x1000) continue;
+			if (usable_end <= usable_start + 0x1000) {
+				continue;
+			}
 
 			uint64_t usable_length = usable_end - usable_start;
 
 			// Update largest_usable_block if this region is bigger
-			if (!largest_usable_block || usable_length > largest_usable_block->length) {
-				largest_usable_block = mmap_entry;
-				largest_usable_block->base = usable_start;
-				largest_usable_block->length = usable_length;
+			if (!first_block_present || usable_length > largest_usable_block.length) {
+				largest_usable_block = *mmap_entry;
+				largest_usable_block.base = usable_start;
+				largest_usable_block.length = usable_length;
+				first_block_present = true;
 			}
 		}
 	}
 
-	if (largest_usable_block) {
-		page_base = (void *)largest_usable_block->base;
+	if (first_block_present) {
+		page_base = (void *)largest_usable_block.base;
 	}
 }
 
 void *alloc_pages(size_t count) {
 	uintptr_t bucket_base_addr = (uintptr_t)page_base;
+	size_t subsq_count = 0;
+	uintptr_t bit_base_addr = bucket_base_addr;
 
 	for (int bucket_idx = 0; bucket_idx < TOTAL_BUCKET_COUNT; bucket_idx++) {
-		size_t subsq_count = 0;
-
 		if (pages[bucket_idx]) {
-			uintptr_t bit_base_addr = bucket_base_addr;
-
 			for (int bit_idx = 0; bit_idx < 64; bit_idx++) {
 				if (pages[bucket_idx] & 1ULL << bit_idx) {
 					subsq_count++;
@@ -79,6 +83,13 @@ void *alloc_pages(size_t count) {
 				}
 
 				if (subsq_count == count) {
+					// mark pages as used
+					uintptr_t curr_addr = bit_base_addr;
+
+					for (size_t i = 0; i < count; i++) {
+						pages[curr_addr / 0x1000 - (uintptr_t)page_base] &= ~(1ULL << (i % 64));
+						curr_addr += 0x1000;
+					}
 					return (void *)bit_base_addr;
 				}
 			}
@@ -99,14 +110,14 @@ void free_pages(void *addr) {
 		return;
 	}
 
-	int page_off = addr - page_base;
+	int page_off = ((uintptr_t)addr - (uintptr_t)page_base) / 0x1000;
 
 	int bucket_idx = page_off / 0x1000;
-	int bit_idx = page_off % 0x1000;
+	int bit_idx = page_off % 64;
 
 	if (bucket_idx >= TOTAL_BUCKET_COUNT || bit_idx >= 64) {
 		return;
 	}
 
-	pages[bucket_idx] = 1 << bit_idx;
+	pages[bucket_idx] |= 1ULL << bit_idx;
 }
