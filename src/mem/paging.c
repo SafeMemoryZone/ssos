@@ -83,7 +83,7 @@ void *alloc_pages(size_t count) {
 				}
 
 				if (subsq_count == count) {
-					// mark pages as used
+					// Mark pages as used
 					uintptr_t curr_addr = bit_base_addr;
 
 					for (size_t i = 0; i < count; i++) {
@@ -112,10 +112,10 @@ void free_pages(void *addr) {
 
 	int page_off = ((uintptr_t)addr - (uintptr_t)page_base) / 0x1000;
 
-	int bucket_idx = page_off / 0x1000;
+	int bucket_idx = page_off / 64;
 	int bit_idx = page_off % 64;
 
-	if (bucket_idx >= TOTAL_BUCKET_COUNT || bit_idx >= 64) {
+	if (bucket_idx >= TOTAL_BUCKET_COUNT) {
 		return;
 	}
 

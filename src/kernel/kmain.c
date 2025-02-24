@@ -25,7 +25,7 @@ void kmain(void) {
 		stop();
 	}
 
-	// don't support multiple framebuffers
+	// Don't support multiple framebuffers
 	if (!framebuffer_request.response || framebuffer_request.response->framebuffer_count > 1) {
 		stop();
 	}

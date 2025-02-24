@@ -74,8 +74,8 @@ typedef struct mem_block {
 	bool is_free;
 } mem_block_t;
 
-// level 0 is 1 byte granularity
-// level 31 is 2 GiB granularity
+// Level 0 is 1 byte granularity
+// Level 31 is 2 GiB granularity
 static mem_block_t *mem_blocks[MEM_BLOCKS_MAX_LEVEL_COUNT] = {0};
 static size_t highest_block_size = 0x1000;
 static int highest_level = 12;
