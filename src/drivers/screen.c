@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "../limine.h"
+#include "../mem/mem.h"
 #include "../misc.h"
 
 static struct limine_framebuffer *FRAMEBUFFER;

@@ -5,6 +5,7 @@
 #include "interrupts/idt.h"
 #include "interrupts/pic.h"
 #include "limine.h"
+#include "mem/paging.h"
 #include "misc.h"
 
 __attribute__((used,
@@ -14,6 +15,10 @@ __attribute__((used, section(".limine_requests"))) static volatile LIMINE_BASE_R
 
 __attribute__((used, section(".limine_requests"))) static volatile struct limine_framebuffer_request
     framebuffer_request = {.id = LIMINE_FRAMEBUFFER_REQUEST, .revision = 0};
+
+__attribute__((
+    used, section(".limine_requests"))) static volatile struct limine_memmap_request memory_map = {
+    .id = LIMINE_MEMMAP_REQUEST, .revision = 0};
 
 void kmain(void) {
 	if (!LIMINE_BASE_REVISION_SUPPORTED) {
@@ -31,6 +36,7 @@ void kmain(void) {
 	init_PIC();
 	enable_interrupts();
 	init_keyboard();
+	init_page_frame_allocator(*memory_map.response->entries, memory_map.response->entry_count);
 
 	stop();
 }

@@ -5,7 +5,6 @@
 #include "interrupts/idt.h"
 #include "misc.h"
 #include "ports.h"
-#include "screen.h"
 
 #define MAX_RETRY_COUNT 3
 #define MAX_KEYBOARD_BUFF_SIZE 24
@@ -21,9 +20,9 @@
 #define RESP_ACK 0xFA
 #define RESP_RESEND 0xFE
 
-keyboard_event_t keyboard_events_buff[MAX_KEYBOARD_BUFF_SIZE] = {0};
-int curr_keyboard_event_buff_idx = 0;
-int curr_buff_size = 0;
+static keyboard_event_t keyboard_events_buff[MAX_KEYBOARD_BUFF_SIZE] = {0};
+static int curr_keyboard_event_buff_idx = 0;
+static int curr_buff_size = 0;
 
 static void send_init_command(void) {
 	uint8_t resp;
@@ -58,7 +57,7 @@ static keyboard_event_t scancode_to_keyboard_event(uint8_t scancode) {
 	static bool is_extended = false;
 	static bool is_released = false;
 
-	static unsigned int pause_index = 0;
+	static unsigned int pause_idx = 0;
 	static const uint8_t pause_seq[8] = {0xE1, 0x14, 0x77, 0xE1, 0xF0, 0x14, 0xF0, 0x77};
 
 	static bool print_screen_pressed_seq = false;
@@ -88,18 +87,18 @@ static keyboard_event_t scancode_to_keyboard_event(uint8_t scancode) {
 		return event;
 	}
 
-	if (pause_index > 0 || scancode == 0xE1) {
-		if (pause_index == 0 && scancode == 0xE1) {
-			pause_index = 1;
+	if (pause_idx > 0 || scancode == 0xE1) {
+		if (pause_idx == 0 && scancode == 0xE1) {
+			pause_idx = 1;
 			return event;
 		}
 		else {
-			if (scancode == pause_seq[pause_index]) {
-				pause_index++;
-				if (pause_index == PAUSE_SEQ_LEN) {
+			if (scancode == pause_seq[pause_idx]) {
+				pause_idx++;
+				if (pause_idx == PAUSE_SEQ_LEN) {
 					event.keycode = KEY_PLAY_PAUSE;
 					event.is_released = false;
-					pause_index = 0;
+					pause_idx = 0;
 					is_extended = false;
 					is_released = false;
 					return event;
@@ -108,7 +107,7 @@ static keyboard_event_t scancode_to_keyboard_event(uint8_t scancode) {
 				return event;
 			}
 			else {
-				pause_index = 0;
+				pause_idx = 0;
 			}
 		}
 	}
@@ -529,9 +528,9 @@ void init_keyboard(void) {
 }
 
 keyboard_event_t consume_event(void) {
-	int index = ((curr_keyboard_event_buff_idx - curr_buff_size) + MAX_KEYBOARD_BUFF_SIZE) %
+	int idx = ((curr_keyboard_event_buff_idx - curr_buff_size) + MAX_KEYBOARD_BUFF_SIZE) %
 	            MAX_KEYBOARD_BUFF_SIZE;
-	keyboard_event_t event = keyboard_events_buff[index];
+	keyboard_event_t event = keyboard_events_buff[idx];
 	curr_buff_size--;
 	return event;
 }
