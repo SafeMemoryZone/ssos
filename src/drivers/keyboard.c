@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 
+#include "drivers/screen.h"
 #include "interrupts/idt.h"
 #include "misc.h"
 #include "ports.h"
@@ -23,8 +24,9 @@
 static keyboard_event_t keyboard_events_buff[MAX_KEYBOARD_BUFF_SIZE] = {0};
 static int curr_keyboard_event_buff_idx = 0;
 static int curr_buff_size = 0;
+static void (*keyboard_callback)(keyboard_event_t);
 
-static void send_init_command(void) {
+static void enable_scanning(void) {
 	uint8_t resp;
 	int i = 0;
 
@@ -47,10 +49,26 @@ static void set_default_scancode_set(void) {
 			stop();
 		}
 		outb(PS2_KEYBOARD_DATA, COMMAND_SET_SCANCODE_SET);
+		io_wait();
+		resp = inb(PS2_KEYBOARD_DATA);
+	} while (resp == RESP_RESEND);
+
+	if (resp != RESP_ACK) {
+		stop();
+	}
+
+	i = 0;
+	do {
+		if (i++ == MAX_RETRY_COUNT) {
+			stop();
+		}
 		outb(PS2_KEYBOARD_DATA, DEFAULT_SCANCODE_SET);
 		io_wait();
 		resp = inb(PS2_KEYBOARD_DATA);
 	} while (resp == RESP_RESEND);
+	if (resp != RESP_ACK) {
+		stop();
+	}
 }
 
 static keyboard_event_t scancode_to_keyboard_event(uint8_t scancode) {
@@ -64,6 +82,9 @@ static keyboard_event_t scancode_to_keyboard_event(uint8_t scancode) {
 	static bool print_screen_released_seq = false;
 
 	keyboard_event_t event = {0};
+
+	kprint_num(scancode);
+	kprint("\n");
 
 	if (scancode == 0xE0) {
 		is_extended = true;
@@ -95,7 +116,7 @@ static keyboard_event_t scancode_to_keyboard_event(uint8_t scancode) {
 		else {
 			if (scancode == pause_seq[pause_idx]) {
 				pause_idx++;
-				if (pause_idx == PAUSE_SEQ_LEN) {
+				if (pause_idx == sizeof(pause_seq)) {
 					event.keycode = KEY_PLAY_PAUSE;
 					event.is_released = false;
 					pause_idx = 0;
@@ -469,6 +490,12 @@ static keyboard_event_t scancode_to_keyboard_event(uint8_t scancode) {
 			case 0x75:
 				event.keycode = KEY_KP_8;
 				break;
+			case 0x76:
+				event.keycode = KEY_ESCAPE;
+				break;
+			case 0x77:
+				event.keycode = KEY_NUMLOCK;
+				break;
 			case 0x78:
 				event.keycode = KEY_F11;
 				break;
@@ -519,18 +546,26 @@ static void ps2_keyboard_callback(interrupt_frame_t *frame, uint64_t irq_num) {
 	curr_keyboard_event_buff_idx = (curr_keyboard_event_buff_idx + 1) % MAX_KEYBOARD_BUFF_SIZE;
 	curr_buff_size =
 	    curr_buff_size < MAX_KEYBOARD_BUFF_SIZE ? curr_buff_size + 1 : MAX_KEYBOARD_BUFF_SIZE;
+
+	if (keyboard_callback) {
+		keyboard_callback(consume_event());
+	}
 }
 
 void init_keyboard(void) {
-	send_init_command();
 	set_default_scancode_set();
+	enable_scanning();
 	install_irq_driver(1, ps2_keyboard_callback);
 }
 
 keyboard_event_t consume_event(void) {
 	int idx = ((curr_keyboard_event_buff_idx - curr_buff_size) + MAX_KEYBOARD_BUFF_SIZE) %
-	            MAX_KEYBOARD_BUFF_SIZE;
+	          MAX_KEYBOARD_BUFF_SIZE;
 	keyboard_event_t event = keyboard_events_buff[idx];
 	curr_buff_size--;
 	return event;
+}
+
+void install_keyboard_event_callback(void (*callback)(keyboard_event_t)) {
+	keyboard_callback = callback;
 }

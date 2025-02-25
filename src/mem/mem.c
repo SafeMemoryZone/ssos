@@ -96,6 +96,10 @@ int init_alloc(void) {
 }
 
 void *kmalloc(size_t bytes) {
+	if (!bytes) {
+		return NULL;
+	}
+
 	size_t meta_size = ALIGN_UP(sizeof(mem_block_t), KERNEL_MEM_ALIGNMENT);
 	bytes += meta_size;  // Extra space for metadata
 
@@ -165,6 +169,10 @@ void *kmalloc(size_t bytes) {
 }
 
 void kfree(void *mem) {
+	if (!mem) {
+		return;
+	}
+
 	size_t meta_size = ALIGN_UP(sizeof(mem_block_t), KERNEL_MEM_ALIGNMENT);
 	mem_block_t *block = (mem_block_t *)((uint8_t *)mem - meta_size);
 	block->is_free = true;

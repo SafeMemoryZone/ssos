@@ -7,6 +7,7 @@
 #include "limine.h"
 #include "mem/paging.h"
 #include "misc.h"
+#include "shell/shell.h"
 
 __attribute__((used,
                section(".limine_requests_start"))) static volatile LIMINE_REQUESTS_START_MARKER;
@@ -37,6 +38,7 @@ void kmain(void) {
 	enable_interrupts();
 	init_keyboard();
 	init_page_frame_allocator(*memory_map.response->entries, memory_map.response->entry_count);
+	// start_shell();
 
 	stop();
 }

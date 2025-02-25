@@ -235,3 +235,32 @@ void kprint(char *str) {
 		kputch(*str++);
 	}
 }
+
+void kprint_num(int num) {
+	char buf[12];
+	int i = 0;
+	bool negative = false;
+
+	if (num == 0) {
+		kputch('0');
+		return;
+	}
+
+	if (num < 0) {
+		negative = true;
+		num = -num;
+	}
+
+	while (num) {
+		buf[i++] = (num % 10) + '0';
+		num /= 10;
+	}
+
+	if (negative) {
+		kputch('-');
+	}
+
+	while (i--) {
+		kputch(buf[i]);
+	}
+}

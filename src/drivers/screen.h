@@ -17,6 +17,7 @@ void clear_screen(void);
 // Higher level printing functions
 void kputch(char ch);
 void kprint(char *str);
+void kprint_num(int num);
 
 // View manipulation
 void scroll_screen(unsigned int pixel_count);

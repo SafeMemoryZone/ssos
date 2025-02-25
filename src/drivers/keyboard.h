@@ -108,7 +108,7 @@ typedef enum {
 	KEY_DELETE,
 	KEY_PAGE_UP,
 	KEY_PAGE_DOWN,
-    KEY_PRINT_SCREEN,
+	KEY_PRINT_SCREEN,
 
 	// Keypad keys
 	KEY_KP_0,
@@ -162,4 +162,5 @@ typedef struct {
 
 void init_keyboard(void);
 keyboard_event_t consume_event(void);
+void install_keyboard_event_callback(void (*callback)(keyboard_event_t));
 #endif  // KEYBOARD_H

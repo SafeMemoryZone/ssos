@@ -8,9 +8,11 @@
 
 void stop(void) {
 	for (;;) {
-		__asm__ __volatile__("hlt");
+		wait_for_interrupts();
 	}
 }
+
+void wait_for_interrupts(void) { __asm__ __volatile__("hlt"); }
 
 void assert(bool cond, char *msg) {
 	if (!cond) {
