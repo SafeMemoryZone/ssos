@@ -3,10 +3,11 @@
 #include <stdint.h>
 
 #include "../limine.h"
+#include "mem/mem.h"
 
 // Misc
 void init_screen(struct limine_framebuffer *framebuffer);
-uint32_t get_rgb_color(uint8_t red, uint8_t green, uint8_t blue);
+uint32_t get_rgb_color(uint32_t red, uint32_t green, uint32_t blue);
 void set_color(uint32_t color);
 void set_font_scale(int scale);
 
@@ -17,7 +18,7 @@ void clear_screen(void);
 // Higher level printing functions
 void kputch(char ch);
 void kprint(char *str);
-void kprint_num(int num);
+void kprint_size_t(size_t num);
 
 // View manipulation
 void scroll_screen(unsigned int pixel_count);

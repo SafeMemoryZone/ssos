@@ -8,7 +8,8 @@
 #include "paging.h"
 
 #define KERNEL_MEM_ALIGNMENT 16
-#define MEM_BLOCKS_MAX_LEVEL_COUNT 32
+#define MEM_BLOCKS_MAX_LEVEL_COUNT 34
+#define MEM_BLOCKS_BASE_LEVEL 3
 
 void *memcpy(void *dest, const void *src, size_t n) {
 	uint8_t *pdest = (uint8_t *)dest;
@@ -74,25 +75,23 @@ typedef struct mem_block {
 	bool is_free;
 } mem_block_t;
 
-// Level 0 is 1 byte granularity
-// Level 31 is 2 GiB granularity
 static mem_block_t *mem_blocks[MEM_BLOCKS_MAX_LEVEL_COUNT] = {0};
-static size_t highest_block_size = 0x1000;
-static int highest_level = 12;
+static size_t highest_block_size = PAGE_SIZE;
+static int highest_level = LOG2_PAGE_SIZE - MEM_BLOCKS_BASE_LEVEL;
 
 int init_alloc(void) {
 	mem_block_t *init_block = alloc_pages(1);
 
 	if (!init_block) {
-		return 1;
+		return RET_ERR;
 	}
 
-	mem_blocks[12] = init_block;
+	mem_blocks[highest_level] = init_block;
 	init_block->next = NULL;
-	init_block->level = 12;
+	init_block->level = highest_level;
 	init_block->is_free = true;
 
-	return 0;
+	return RET_OK;
 }
 
 void *kmalloc(size_t bytes) {
@@ -110,7 +109,7 @@ void *kmalloc(size_t bytes) {
 
 		highest_block_size *= 2;
 		highest_level++;
-		mem_blocks[highest_level] = alloc_pages(highest_block_size / 0x1000);
+		mem_blocks[highest_level] = alloc_pages(highest_block_size / PAGE_SIZE);
 
 		if (!mem_blocks[highest_level]) {
 			return NULL;
@@ -148,7 +147,7 @@ void *kmalloc(size_t bytes) {
 					return (uint8_t *)curr_free_block + meta_size;
 				}
 
-				size_t block_size = 1 << curr_level;
+				size_t block_size = 1ULL << curr_level;
 
 				mem_block_t *block1 = curr_free_block;
 				mem_block_t *block2 = (mem_block_t *)((uint8_t *)curr_free_block + block_size / 2);
@@ -178,7 +177,7 @@ void kfree(void *mem) {
 	block->is_free = true;
 
 	while (block->level < highest_level) {
-		size_t block_size = 1 << block->level;
+		size_t block_size = 1ULL << block->level;
 		mem_block_t *buddy = (mem_block_t *)((uintptr_t)block ^ block_size);
 
 		if (!(buddy->is_free && buddy->level == block->level)) {

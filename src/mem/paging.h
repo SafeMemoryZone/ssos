@@ -4,7 +4,10 @@
 
 #include "../limine.h"
 
-void init_page_frame_allocator(struct limine_memmap_entry *mmap_entries, size_t entry_count);
+#define PAGE_SIZE 0x200000
+#define LOG2_PAGE_SIZE 21
+
+int init_page_frame_allocator(struct limine_memmap_entry *mmap_entries, size_t entry_count, uint64_t hh_off);
 void *alloc_pages(size_t count);
 void free_pages(void *addr);
 #endif  // PAGING_H

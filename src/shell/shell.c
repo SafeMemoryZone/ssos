@@ -25,6 +25,7 @@ void terminal_input_callback(keyboard_event_t event) {
 	assign:
 		curr_line = new_line;
 		curr_line_capacity = curr_line_capacity * 2 + 1;
+		kputch('\n');
 	}
 
 	bool new_char = false;
@@ -170,6 +171,7 @@ void start_shell(void) {
 
 		for (;;) {
 			wait_for_interrupts();
+
 			if (prompt_comfirmed) {
 				prompt_comfirmed = false;
 				reset_prompt_buff();

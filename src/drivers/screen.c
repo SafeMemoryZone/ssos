@@ -154,7 +154,7 @@ void init_screen(struct limine_framebuffer *framebuffer) {
 	curr_scale = 1;
 }
 
-uint32_t get_rgb_color(uint8_t red, uint8_t green, uint8_t blue) {
+uint32_t get_rgb_color(uint32_t red, uint32_t green, uint32_t blue) {
 	return (red << FRAMEBUFFER->red_mask_shift) | (green << FRAMEBUFFER->green_mask_shift) |
 	       (blue << FRAMEBUFFER->blue_mask_shift);
 }
@@ -236,28 +236,18 @@ void kprint(char *str) {
 	}
 }
 
-void kprint_num(int num) {
-	char buf[12];
+void kprint_size_t(size_t num) {
+	char buf[128];
 	int i = 0;
-	bool negative = false;
 
 	if (num == 0) {
 		kputch('0');
 		return;
 	}
 
-	if (num < 0) {
-		negative = true;
-		num = -num;
-	}
-
 	while (num) {
 		buf[i++] = (num % 10) + '0';
 		num /= 10;
-	}
-
-	if (negative) {
-		kputch('-');
 	}
 
 	while (i--) {

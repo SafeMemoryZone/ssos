@@ -6,9 +6,10 @@
 
 #include "drivers/screen.h"
 
-void stop(void) {
-	for (;;) {
-		wait_for_interrupts();
+__attribute__((noreturn)) void stop(void) {
+	asm volatile("cli");
+	while (1) {
+		asm volatile("hlt");
 	}
 }
 
@@ -16,37 +17,14 @@ void wait_for_interrupts(void) { __asm__ __volatile__("hlt"); }
 
 void assert(bool cond, char *msg) {
 	if (!cond) {
-		kprint("[ASSERTION FAILURE] ");
+		kprint("[FATAL ERROR] ");
 		kprint(msg);
+		kputch('\n');
 		stop();
 	}
 }
 
-size_t log2(size_t x) {
-	size_t result = 0;
-	while (x >>= 1) {
-		result++;
-	}
-	return result;
-}
-
-size_t pow(size_t base, int exp) {
-	size_t result = 1;
-	for (;;) {
-		if (exp & 1) {
-			result *= base;
-		}
-		exp >>= 1;
-
-		if (!exp) {
-			break;
-		}
-
-		base *= base;
-	}
-
-	return result;
-}
+size_t log2(size_t x) { return 31U - __builtin_clz(x); }
 
 size_t round_pow2(size_t x) {
 	x--;

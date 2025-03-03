@@ -2,7 +2,6 @@
 
 #include <stdint.h>
 
-#include "drivers/screen.h"
 #include "interrupts/idt.h"
 #include "misc.h"
 #include "ports.h"
@@ -10,13 +9,17 @@
 #define MAX_RETRY_COUNT 3
 #define MAX_KEYBOARD_BUFF_SIZE 24
 #define DEFAULT_SCANCODE_SET 2
-#define PAUSE_SEQ_LEN 8
 
-#define PS2_KEYBOARD_DATA 0x60
-#define PS2_KEYBOARD_COMMAND 0x64
+#define KBD_DATA 0x60
+#define KBD_STATUS 0x64
+#define KBD_COMMAND 0x64
 
 #define COMMAND_ENABLE_SCANNING 0xF4
+#define COMMAND_DISABLE_SCANNING 0xF5
 #define COMMAND_SET_SCANCODE_SET 0xF0
+#define COMMAND_WRITE_CCB 0x60
+
+#define PS2_CONFIG_BYTE 0b00100101
 
 #define RESP_ACK 0xFA
 #define RESP_RESEND 0xFE
@@ -26,49 +29,70 @@ static int curr_keyboard_event_buff_idx = 0;
 static int curr_buff_size = 0;
 static void (*keyboard_callback)(keyboard_event_t);
 
-static void enable_scanning(void) {
+static int enable_scanning(void) {
 	uint8_t resp;
 	int i = 0;
 
 	do {
 		if (i++ == MAX_RETRY_COUNT) {
-			stop();
+			return RET_ERR;
 		}
-		outb(PS2_KEYBOARD_DATA, COMMAND_ENABLE_SCANNING);
+		outb(KBD_DATA, COMMAND_ENABLE_SCANNING);
 		io_wait();
-		resp = inb(PS2_KEYBOARD_DATA);
+		resp = inb(KBD_DATA);
 	} while (resp == RESP_RESEND);
+
+	return RET_OK;
 }
 
-static void set_default_scancode_set(void) {
+static int disable_scanning(void) {
 	uint8_t resp;
 	int i = 0;
 
 	do {
 		if (i++ == MAX_RETRY_COUNT) {
-			stop();
+			return RET_ERR;
 		}
-		outb(PS2_KEYBOARD_DATA, COMMAND_SET_SCANCODE_SET);
+		outb(KBD_DATA, COMMAND_DISABLE_SCANNING);
 		io_wait();
-		resp = inb(PS2_KEYBOARD_DATA);
+		resp = inb(KBD_DATA);
+	} while (resp == RESP_RESEND);
+
+	return RET_OK;
+}
+
+static int set_default_scancode_set(void) {
+	uint8_t resp;
+	int i = 0;
+
+	do {
+		if (i++ == MAX_RETRY_COUNT) {
+			return RET_ERR;
+		}
+		outb(KBD_DATA, COMMAND_SET_SCANCODE_SET);
+		io_wait();
+		resp = inb(KBD_DATA);
 	} while (resp == RESP_RESEND);
 
 	if (resp != RESP_ACK) {
-		stop();
+		return RET_ERR;
 	}
 
 	i = 0;
 	do {
 		if (i++ == MAX_RETRY_COUNT) {
-			stop();
+			return RET_ERR;
 		}
-		outb(PS2_KEYBOARD_DATA, DEFAULT_SCANCODE_SET);
+		outb(KBD_DATA, DEFAULT_SCANCODE_SET);
 		io_wait();
-		resp = inb(PS2_KEYBOARD_DATA);
+		resp = inb(KBD_DATA);
 	} while (resp == RESP_RESEND);
+
 	if (resp != RESP_ACK) {
-		stop();
+		return RET_ERR;
 	}
+
+	return RET_OK;
 }
 
 static keyboard_event_t scancode_to_keyboard_event(uint8_t scancode) {
@@ -82,9 +106,6 @@ static keyboard_event_t scancode_to_keyboard_event(uint8_t scancode) {
 	static bool print_screen_released_seq = false;
 
 	keyboard_event_t event = {0};
-
-	kprint_num(scancode);
-	kprint("\n");
 
 	if (scancode == 0xE0) {
 		is_extended = true;
@@ -536,7 +557,7 @@ static keyboard_event_t scancode_to_keyboard_event(uint8_t scancode) {
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 static void ps2_keyboard_callback(interrupt_frame_t *frame, uint64_t irq_num) {
 #pragma GCC diagnostic pop
-	uint8_t scancode = inb(PS2_KEYBOARD_DATA);
+	uint8_t scancode = inb(KBD_DATA);
 	keyboard_event_t event = scancode_to_keyboard_event(scancode);
 	if (event.keycode == KEY_NONE || event.keycode == KEY_UNKNOWN) {
 		return;
@@ -552,10 +573,44 @@ static void ps2_keyboard_callback(interrupt_frame_t *frame, uint64_t irq_num) {
 	}
 }
 
-void init_keyboard(void) {
-	set_default_scancode_set();
-	enable_scanning();
+static void flush_keyboard(void) {
+	uint8_t status;
+
+	do {
+		status = inb(KBD_STATUS);
+		if (status & 0x1) {
+			(void)inb(KBD_DATA);
+		}
+	} while (status & 0x1);
+}
+
+static void set_ps2_config_byte(void) {
+	while (inb(KBD_STATUS) & 0x02);
+	outb(KBD_COMMAND, COMMAND_WRITE_CCB);
+	while (inb(KBD_STATUS) & 0x02);
+	outb(KBD_DATA, PS2_CONFIG_BYTE);
+}
+
+int init_keyboard(void) {
+	// TODO: execute self-test, disable AUX ...
+	if (disable_scanning()) {
+		return RET_ERR;
+	}
+
+	flush_keyboard();
+	set_ps2_config_byte();
+
+	if (set_default_scancode_set()) {
+		return RET_ERR;
+	}
+
 	install_irq_driver(1, ps2_keyboard_callback);
+
+	if (enable_scanning()) {
+		return RET_ERR;
+	}
+
+	return RET_OK;
 }
 
 keyboard_event_t consume_event(void) {

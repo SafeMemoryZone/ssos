@@ -160,7 +160,7 @@ typedef struct {
 	bool is_released;
 } keyboard_event_t;
 
-void init_keyboard(void);
+int init_keyboard(void);
 keyboard_event_t consume_event(void);
 void install_keyboard_event_callback(void (*callback)(keyboard_event_t));
 #endif  // KEYBOARD_H
