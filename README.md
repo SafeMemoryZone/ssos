@@ -6,7 +6,7 @@
 
 All source code is licensed under the [MIT License](LICENSE).
 
-The fonts in the `font/` directory are provided under a separate license. Below are the terms:
+The fonts in the `fonts/` directory are provided under a separate license. Below are the terms:
 
 ```
 Copyright © 2004–25, John Zaitseff.
