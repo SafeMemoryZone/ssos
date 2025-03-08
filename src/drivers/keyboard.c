@@ -2,7 +2,6 @@
 
 #include <stdint.h>
 
-#include "drivers/screen.h"
 #include "interrupts/idt.h"
 #include "misc.h"
 #include "ports.h"

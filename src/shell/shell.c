@@ -147,7 +147,9 @@ void reset_prompt_buff(void) {
 }
 
 void start_shell(void) {
+    // Simple shell for now - no commands yet
 	install_keyboard_event_callback(terminal_input_callback);
+
 	for (;;) {
 		display_prompt();
 		for (;;) {
