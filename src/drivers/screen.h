@@ -3,7 +3,6 @@
 #include <stdint.h>
 
 #include "../limine.h"
-#include "mem/mem.h"
 
 // Misc
 void init_screen(struct limine_framebuffer *framebuffer);
@@ -18,7 +17,7 @@ void clear_screen(void);
 // Higher level printing functions
 void kputch(char ch);
 void kprint(char *str);
-void kprint_size_t(size_t num);
+void kprint_addr(uintptr_t addr);
 
 // View manipulation
 void scroll_screen(unsigned int pixel_count);

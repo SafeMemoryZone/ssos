@@ -13,7 +13,7 @@ PHDRS
 SECTIONS
 {
     . = 0xffffffff80000000;
-    kernel_start = .;
+    virt_kernel_start = .;
 
     /* Define a section to contain the Limine requests and assign it to its own PHDR */
     .limine_requests : {
@@ -52,5 +52,5 @@ SECTIONS
         *(.note .note.*)
     }
 
-    kernel_end = .;
+    virt_kernel_end = .;
 }

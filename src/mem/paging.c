@@ -7,8 +7,8 @@
 #include "misc.h"
 #include "paging.h"
 
-#define TOTAL_PAGES 2048
-#define TOTAL_BUCKET_COUNT (TOTAL_PAGES / 64)
+#define MAX_PAGES 2560
+#define TOTAL_BUCKET_COUNT (MAX_PAGES / 64)
 #define BUCKET_SIZE 64
 
 #define PAGE_PRESENT (1ULL << 0)
@@ -31,6 +31,7 @@ static uintptr_t hhdm_start;
 static uint64_t pages[TOTAL_BUCKET_COUNT] = {0};
 static uintptr_t phys_page_base;
 static uint64_t *kernel_pml4;
+static size_t present_page_count;
 
 __attribute__((aligned(0x1000))) static uint8_t page_tables[RESERVED_SPACE_SIZE];
 void *curr_free_page_table = page_tables;
@@ -43,7 +44,7 @@ uint64_t read_cr3(void) {
 
 int init_page_frame_allocator(struct limine_memmap_entry *mmap_entries, size_t entry_count,
                               uint64_t hh_off) {
-	kernel_pml4 = (uint64_t *)read_cr3();
+	kernel_pml4 = (uint64_t *)(read_cr3() + hh_off);
 	hhdm_start = hh_off;
 
 	uint64_t best_base = 0;
@@ -99,12 +100,13 @@ int init_page_frame_allocator(struct limine_memmap_entry *mmap_entries, size_t e
 
 	size_t page_count = best_len / PAGE_SIZE;
 
-	for (size_t page_idx = 0; page_idx < (page_count > TOTAL_PAGES ? TOTAL_PAGES : page_count);
+	for (size_t page_idx = 0; page_idx < (page_count > MAX_PAGES ? MAX_PAGES : page_count);
 	     page_idx++) {
 		pages[page_idx / BUCKET_SIZE] |= 1 << (page_idx % BUCKET_SIZE);
 	}
 
 	phys_page_base = best_base;
+	present_page_count = page_count > MAX_PAGES ? MAX_PAGES : page_count;
 	return RET_OK;
 }
 
@@ -132,7 +134,6 @@ uint64_t get_page_entry_with_alloc(bool present, bool rw, bool user, bool pwt, b
 
 void map_page(void *phys_page_addr, uint64_t *pml4_addr) {
 	uintptr_t virt_page_addr = (uintptr_t)phys_page_addr + hhdm_start;
-
 	uintptr_t pml4_idx = (virt_page_addr >> 39) & 0x1FF;
 	uintptr_t pdpt_idx = (virt_page_addr >> 30) & 0x1FF;
 	uintptr_t pd_idx = (virt_page_addr >> 21) & 0x1FF;
@@ -196,25 +197,21 @@ void *alloc_pages(size_t count) {
 	return NULL;
 }
 
-void free_pages(void *addr) {
-	uintptr_t phys_addr = (uintptr_t)addr - hhdm_start;
+void free_pages(void *addr, size_t count) {
+	uintptr_t phys_page_addr = (uintptr_t)addr - hhdm_start;
 
-	if (phys_addr % PAGE_SIZE != 0) {
+	if (phys_page_addr % PAGE_SIZE != 0) {
 		return;
 	}
 
-	if (phys_addr < phys_page_base) {
+	if (phys_page_addr < phys_page_base) {
 		return;
 	}
 
-	int page_off = (phys_addr - phys_page_base) / PAGE_SIZE;
-
-	int bucket_idx = page_off / BUCKET_SIZE;
-	int bit_idx = page_off % BUCKET_SIZE;
-
-	if (bucket_idx >= TOTAL_BUCKET_COUNT) {
-		return;
+	for (size_t curr_page_off = (phys_page_addr - phys_page_base) / PAGE_SIZE;
+	     curr_page_off < count && curr_page_off < present_page_count; curr_page_off++) {
+		int bucket_idx = curr_page_off / BUCKET_SIZE;
+		int bit_idx = curr_page_off % BUCKET_SIZE;
+		pages[bucket_idx] |= 1ULL << bit_idx;
 	}
-
-	pages[bucket_idx] |= 1ULL << bit_idx;
 }

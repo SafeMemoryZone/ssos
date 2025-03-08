@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 
+#include "drivers/screen.h"
 #include "interrupts/idt.h"
 #include "misc.h"
 #include "ports.h"
@@ -574,14 +575,9 @@ static void ps2_keyboard_callback(interrupt_frame_t *frame, uint64_t irq_num) {
 }
 
 static void flush_keyboard(void) {
-	uint8_t status;
-
-	do {
-		status = inb(KBD_STATUS);
-		if (status & 0x1) {
-			(void)inb(KBD_DATA);
-		}
-	} while (status & 0x1);
+	while (inb(KBD_STATUS) & 0x1) {
+		(void)inb(KBD_DATA);
+	}
 }
 
 static void set_ps2_config_byte(void) {

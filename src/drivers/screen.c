@@ -236,21 +236,24 @@ void kprint(char *str) {
 	}
 }
 
-void kprint_size_t(size_t num) {
+void kprint_addr(uintptr_t addr) {
 	char buf[128];
 	int i = 0;
 
-	if (num == 0) {
+	kprint("0x");
+
+	if (addr == 0) {
 		kputch('0');
 		return;
 	}
 
-	while (num) {
-		buf[i++] = (num % 10) + '0';
-		num /= 10;
+	while (addr) {
+		int digit = addr % 16;
+		buf[i++] = digit < 10 ? digit + '0' : digit - 10 + 'a';
+		addr /= 16;
 	}
 
-	while (i--) {
-		kputch(buf[i]);
+	for (int j = i - 1; j >= 0; j--) {
+		kputch(buf[j]);
 	}
 }

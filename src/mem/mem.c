@@ -14,28 +14,23 @@
 void *memcpy(void *dest, const void *src, size_t n) {
 	uint8_t *pdest = (uint8_t *)dest;
 	const uint8_t *psrc = (const uint8_t *)src;
-
 	for (size_t i = 0; i < n; i++) {
 		pdest[i] = psrc[i];
 	}
-
 	return dest;
 }
 
 void *memset(void *s, int c, size_t n) {
 	uint8_t *p = (uint8_t *)s;
-
 	for (size_t i = 0; i < n; i++) {
 		p[i] = (uint8_t)c;
 	}
-
 	return s;
 }
 
 void *memmove(void *dest, const void *src, size_t n) {
 	uint8_t *pdest = (uint8_t *)dest;
 	const uint8_t *psrc = (const uint8_t *)src;
-
 	if (src > dest) {
 		for (size_t i = 0; i < n; i++) {
 			pdest[i] = psrc[i];
@@ -46,20 +41,17 @@ void *memmove(void *dest, const void *src, size_t n) {
 			pdest[i - 1] = psrc[i - 1];
 		}
 	}
-
 	return dest;
 }
 
 int memcmp(const void *s1, const void *s2, size_t n) {
 	const uint8_t *p1 = (const uint8_t *)s1;
 	const uint8_t *p2 = (const uint8_t *)s2;
-
 	for (size_t i = 0; i < n; i++) {
 		if (p1[i] != p2[i]) {
 			return p1[i] < p2[i] ? -1 : 1;
 		}
 	}
-
 	return 0;
 }
 
@@ -81,34 +73,32 @@ static int highest_level = LOG2_PAGE_SIZE - MEM_BLOCKS_BASE_LEVEL;
 
 int init_alloc(void) {
 	mem_block_t *init_block = alloc_pages(1);
-
 	if (!init_block) {
 		return RET_ERR;
 	}
-
 	mem_blocks[highest_level] = init_block;
 	init_block->next = NULL;
 	init_block->level = highest_level;
 	init_block->is_free = true;
-
 	return RET_OK;
 }
 
 void *kmalloc(size_t bytes) {
-	if (!bytes) {
+	if (bytes == 0) {
 		return NULL;
 	}
 
 	size_t meta_size = ALIGN_UP(sizeof(mem_block_t), KERNEL_MEM_ALIGNMENT);
-	bytes += meta_size;  // Extra space for metadata
+	bytes += meta_size;
 
-	if (bytes > highest_block_size) {
-		if (highest_level + 1 > MEM_BLOCKS_MAX_LEVEL_COUNT) {
+	while (bytes > highest_block_size) {
+		if (highest_level + 1 >= MEM_BLOCKS_MAX_LEVEL_COUNT) {
 			return NULL;
 		}
 
 		highest_block_size *= 2;
 		highest_level++;
+
 		mem_blocks[highest_level] = alloc_pages(highest_block_size / PAGE_SIZE);
 
 		if (!mem_blocks[highest_level]) {
@@ -120,48 +110,48 @@ void *kmalloc(size_t bytes) {
 		mem_blocks[highest_level]->is_free = true;
 	}
 
-	// Try to find an appropriate block
-	int best_level = log2(round_pow2(bytes));
+	int target_level = log2(round_pow2(bytes)) - MEM_BLOCKS_BASE_LEVEL;
 
-	if (mem_blocks[best_level]) {
-		for (mem_block_t *curr_free_block = mem_blocks[best_level]; curr_free_block != NULL;
-		     curr_free_block = curr_free_block->next) {
-			if (curr_free_block->is_free) {
-				curr_free_block->is_free = false;
-				return (uint8_t *)curr_free_block + meta_size;
-			}
-		}
+	if (mem_blocks[target_level]) {
+		mem_block_t *free_block = mem_blocks[target_level];
+		mem_blocks[target_level] = free_block->next;
+		free_block->is_free = false;
+		free_block->next = NULL;
+
+		return (uint8_t *)free_block + meta_size;
 	}
 
-	// Couldn't find a matching block: generate buddies recursively
-	size_t required_level = log2(round_pow2(bytes));
+	// If no free block was found, try splitting larger blocks
+	for (int curr_level = highest_level; curr_level >= target_level; curr_level--) {
+		mem_block_t *free_block = mem_blocks[curr_level];
 
-	for (int curr_level = highest_level; curr_level >= (int)required_level; curr_level--) {
-		// Take a free page from the current level and split it in half
-
-		for (mem_block_t *curr_free_block = mem_blocks[curr_level]; curr_free_block != NULL;
-		     curr_free_block = curr_free_block->next) {
-			if (curr_free_block->is_free) {
-				if ((size_t)curr_level == required_level) {
-					curr_free_block->is_free = false;
-					return (uint8_t *)curr_free_block + meta_size;
-				}
-
-				size_t block_size = 1ULL << curr_level;
-
-				mem_block_t *block1 = curr_free_block;
-				mem_block_t *block2 = (mem_block_t *)((uint8_t *)curr_free_block + block_size / 2);
-
-				block1->next = block2;
-				block1->level = curr_level - 1;
-
-				block2->next = mem_blocks[curr_level - 1];
-				block2->level = curr_level - 1;
-				block2->is_free = true;
-
-				mem_blocks[curr_level - 1] = block1;
-			}
+		if (!free_block) {
+			continue;
 		}
+
+		mem_blocks[curr_level] = free_block->next;
+
+		if (curr_level == target_level) {
+			free_block->is_free = false;
+			free_block->next = NULL;
+
+			return (uint8_t *)free_block + meta_size;
+		}
+
+		size_t block_size = 1ULL << (curr_level + MEM_BLOCKS_BASE_LEVEL);
+
+		mem_block_t *block1 = free_block;
+		mem_block_t *block2 = (mem_block_t *)((uint8_t *)free_block + block_size / 2);
+
+		block1->level = curr_level - 1;
+		block1->is_free = true;
+		block1->next = mem_blocks[curr_level - 1];
+		mem_blocks[curr_level - 1] = block1;
+
+		block2->level = curr_level - 1;
+		block2->is_free = true;
+		block2->next = mem_blocks[curr_level - 1];
+		mem_blocks[curr_level - 1] = block2;
 	}
 
 	return NULL;
@@ -176,13 +166,15 @@ void kfree(void *mem) {
 	mem_block_t *block = (mem_block_t *)((uint8_t *)mem - meta_size);
 	block->is_free = true;
 
+	// Attempt to merge buddy blocks
 	while (block->level < highest_level) {
-		size_t block_size = 1ULL << block->level;
+		size_t block_size = 1ULL << (block->level + MEM_BLOCKS_BASE_LEVEL);
 		mem_block_t *buddy = (mem_block_t *)((uintptr_t)block ^ block_size);
 
 		if (!(buddy->is_free && buddy->level == block->level)) {
 			break;
 		}
+		// Remove the buddy from the free list
 		if (mem_blocks[block->level] == buddy) {
 			mem_blocks[block->level] = buddy->next;
 		}
@@ -195,12 +187,14 @@ void kfree(void *mem) {
 				prev->next = buddy->next;
 			}
 		}
+		// Choose the block with the lower address
 		if (buddy < block) {
 			block = buddy;
 		}
 		block->level++;
 	}
 
+	// Add the block back to the freelist
 	block->next = mem_blocks[block->level];
 	mem_blocks[block->level] = block;
 }

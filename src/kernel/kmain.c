@@ -70,5 +70,6 @@ void kmain(void) {
 	}
 
 	start_shell();
+	kprint("[WARNING] Kernel fallback executed. Stopping.\n");
 	stop();
 }

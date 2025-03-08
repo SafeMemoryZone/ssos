@@ -58,11 +58,11 @@ static void idt_set_descriptor(uint8_t vector, void* isr, uint8_t flags) {
 
 void exception_handler(interrupt_frame_t* frame, uint64_t int_num) {
 	kprint("[ERROR] Got exception ");
-	kprint_size_t(int_num);
+	kprint_addr(int_num);
 	kprint(" from address ");
-	kprint_size_t(frame->rip);
+	kprint_addr(frame->rip);
 	kprint(" with error code ");
-	kprint_size_t(frame->error_code);
+	kprint_addr(frame->error_code);
 	kprint(".\n");
 	stop();
 }
