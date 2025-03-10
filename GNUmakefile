@@ -32,7 +32,7 @@ override CFLAGS += \
     -mno-red-zone \
     -mcmodel=kernel
 
-# Internal C preprocessor flags that should not be changed by the user.
+# Internal C preprocessor flags that should not be changed by the user
 override CPPFLAGS := \
     -I src \
     $(CPPFLAGS) \
@@ -40,14 +40,14 @@ override CPPFLAGS := \
     -MMD \
     -MP
 
-# Internal nasm flags that should not be changed by the user.
+# Internal nasm flags that should not be changed by the user
 override NASMFLAGS += \
     -Wall \
     -f elf64 \
 	-w-reloc-rel-dword \
 	-w-reloc-abs-qword
 
-# Internal linker flags that should not be changed by the user.
+# Internal linker flags that should not be changed by the user
 override LDFLAGS += \
     -Wl,-m,elf_x86_64 \
     -Wl,--build-id=none \
@@ -57,7 +57,7 @@ override LDFLAGS += \
     -T linker.ld
 
 # Use "find" to glob all *.c, *.S, and *.asm files in the tree and obtain the
-# object and header dependency file names.
+# object and header dependency file names
 override SRCFILES := $(shell cd src && find -L * -type f | LC_ALL=C sort)
 override CFILES := $(filter %.c,$(SRCFILES))
 override ASFILES := $(filter %.S,$(SRCFILES))
@@ -70,28 +70,29 @@ all: bin/$(OUTPUT)
 
 -include $(HEADER_DEPS)
 
-# Link rules for the final executable.
+# Link rules for the final executable
 bin/$(OUTPUT): GNUmakefile linker.ld $(OBJ)
 	mkdir -p "$$(dirname $@)"
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJ) -o $@
 	objcopy --only-keep-debug $@ $@.sym
 	strip --strip-debug $@
 
-# Compilation rules for *.c files.
+# Compilation rules for *.c files
 obj/%.c.o: src/%.c GNUmakefile
 	mkdir -p "$$(dirname $@)"
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
-# Compilation rules for *.S files.
+# Compilation rules for *.S files
 obj/%.S.o: src/%.S GNUmakefile
 	mkdir -p "$$(dirname $@)"
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
-# Compilation rules for *.asm (nasm) files.
+# Compilation rules for *.asm (nasm) files
 obj/%.asm.o: src/%.asm GNUmakefile
 	mkdir -p "$$(dirname $@)"
 	nasm $(NASMFLAGS) $< -o $@
 
 .PHONY: clean
+
 clean:
-	rm -rf bin obj
+	rm -rf bin obj limine $(OUTPUT).hdd

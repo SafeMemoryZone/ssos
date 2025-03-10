@@ -2,6 +2,23 @@
 
 **ssos** is a minimalistic operating system designed to be a learning resource and an inspiration for others.
 
+## Build Instructions
+
+1. Build the kernel:
+```
+$ make
+```
+
+2. Build the final HDD image and bake Limine into it:
+```
+$ ./make-hdd
+```
+
+3. Run the operating system:
+```
+$ UEFI_FIRMWARE_PATH=<OVMF-path> ./run-qemu
+```
+
 ## License
 
 All source code is licensed under the [MIT License](LICENSE).

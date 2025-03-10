@@ -1,62 +1,27 @@
-# Prerequisites
-*.d
-
-# Object files
+# Ignore compiled object files and executables
 *.o
-*.ko
 *.obj
-*.elf
-
-# Linker output
-*.ilk
-*.map
-*.exp
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
-
-# Shared objects (inc. Windows DLLs)
-*.dll
 *.so
-*.so.*
-*.dylib
-
-# Executables
+*.a
 *.exe
 *.out
-*.app
-*.i*86
-*.x86_64
-*.hex
+*.elf
 
-# Debug files
-*.dSYM/
-*.su
-*.idb
-*.pdb
+# Ignore dependency files
+*.d
 
-# Kernel Module Compile Results
-*.mod*
-*.cmd
-.tmp_versions/
-modules.order
-Module.symvers
-Mkfile.old
-dkms.conf
-
-# Others
-build/
-.cache/
+# Ignore generated compile commands
 compile_commands.json
-bin/
-iso_root/
+
+# Ignore build directories
 limine/
+bin/
 obj/
-image.iso
+
+# Ignore temporary files created by editors
+*~
+*.swp
+*.swo
+
+# Ignore cache directory
+.cache/
