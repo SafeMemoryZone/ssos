@@ -25,6 +25,7 @@ typedef struct {
 	uint64_t ss;
 } __attribute__((packed)) interrupt_frame_t;
 
-void init_idt(void);
-void install_irq_driver(int irq_num, void (*handler)(interrupt_frame_t*, uint64_t));
+void idt_init(void);
+void idt_install_irq_driver(int irq_num, void (*handler)(interrupt_frame_t*, uint64_t));
+void enable_interrupts(void);
 #endif  // IDT_H

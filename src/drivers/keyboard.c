@@ -24,17 +24,17 @@
 #define RESP_ACK 0xFA
 #define RESP_RESEND 0xFE
 
-static keyboard_event_t keyboard_events_buff[MAX_KEYBOARD_BUFF_SIZE] = {0};
-static int curr_keyboard_event_buff_idx = 0;
-static int curr_buff_size = 0;
+static keyboard_event_t keyboard_event_buff[MAX_KEYBOARD_BUFF_SIZE] = {0};
+static int event_buff_idx = 0;
+static int event_count = 0;
 static void (*keyboard_callback)(keyboard_event_t);
 
-static int enable_scanning(void) {
+static int keyboard_enable_scanning(void) {
 	uint8_t resp;
-	int i = 0;
+	int retry_count = 0;
 
 	do {
-		if (i++ == MAX_RETRY_COUNT) {
+		if (retry_count++ == MAX_RETRY_COUNT) {
 			return RET_ERR;
 		}
 		outb(KBD_DATA, COMMAND_ENABLE_SCANNING);
@@ -45,12 +45,12 @@ static int enable_scanning(void) {
 	return RET_OK;
 }
 
-static int disable_scanning(void) {
+static int keyboard_disable_scanning(void) {
 	uint8_t resp;
-	int i = 0;
+	int retry_count = 0;
 
 	do {
-		if (i++ == MAX_RETRY_COUNT) {
+		if (retry_count++ == MAX_RETRY_COUNT) {
 			return RET_ERR;
 		}
 		outb(KBD_DATA, COMMAND_DISABLE_SCANNING);
@@ -61,12 +61,12 @@ static int disable_scanning(void) {
 	return RET_OK;
 }
 
-static int set_default_scancode_set(void) {
+static int keyboard_set_default_scancode_set(void) {
 	uint8_t resp;
-	int i = 0;
+	int retry_count = 0;
 
 	do {
-		if (i++ == MAX_RETRY_COUNT) {
+		if (retry_count++ == MAX_RETRY_COUNT) {
 			return RET_ERR;
 		}
 		outb(KBD_DATA, COMMAND_SET_SCANCODE_SET);
@@ -78,9 +78,9 @@ static int set_default_scancode_set(void) {
 		return RET_ERR;
 	}
 
-	i = 0;
+	retry_count = 0;
 	do {
-		if (i++ == MAX_RETRY_COUNT) {
+		if (retry_count++ == MAX_RETRY_COUNT) {
 			return RET_ERR;
 		}
 		outb(KBD_DATA, DEFAULT_SCANCODE_SET);
@@ -95,15 +95,15 @@ static int set_default_scancode_set(void) {
 	return RET_OK;
 }
 
-static keyboard_event_t scancode_to_keyboard_event(uint8_t scancode) {
+static keyboard_event_t keyboard_translate_scancode(uint8_t scancode) {
 	static bool is_extended = false;
 	static bool is_released = false;
 
-	static unsigned int pause_idx = 0;
-	static const uint8_t pause_seq[8] = {0xE1, 0x14, 0x77, 0xE1, 0xF0, 0x14, 0xF0, 0x77};
+	static unsigned int pause_sequence_idx = 0;
+	static const uint8_t pause_sequence[8] = {0xE1, 0x14, 0x77, 0xE1, 0xF0, 0x14, 0xF0, 0x77};
 
-	static bool print_screen_pressed_seq = false;
-	static bool print_screen_released_seq = false;
+	static bool is_print_screen_pressed_pending = false;
+	static bool is_print_screen_released_pending = false;
 
 	keyboard_event_t event = {0};
 
@@ -116,31 +116,31 @@ static keyboard_event_t scancode_to_keyboard_event(uint8_t scancode) {
 		return event;
 	}
 
-	if (print_screen_pressed_seq && scancode == 0x7C) {
-		print_screen_pressed_seq = false;
+	if (is_print_screen_pressed_pending && scancode == 0x7C) {
+		is_print_screen_pressed_pending = false;
 		event.keycode = KEY_PRINT_SCREEN;
 		event.is_released = false;
 		return event;
 	}
-	if (print_screen_released_seq && scancode == 0x12) {
-		print_screen_released_seq = false;
+	if (is_print_screen_released_pending && scancode == 0x12) {
+		is_print_screen_released_pending = false;
 		event.keycode = KEY_PRINT_SCREEN;
 		event.is_released = true;
 		return event;
 	}
 
-	if (pause_idx > 0 || scancode == 0xE1) {
-		if (pause_idx == 0 && scancode == 0xE1) {
-			pause_idx = 1;
+	if (pause_sequence_idx > 0 || scancode == 0xE1) {
+		if (pause_sequence_idx == 0 && scancode == 0xE1) {
+			pause_sequence_idx = 1;
 			return event;
 		}
 		else {
-			if (scancode == pause_seq[pause_idx]) {
-				pause_idx++;
-				if (pause_idx == sizeof(pause_seq)) {
+			if (scancode == pause_sequence[pause_sequence_idx]) {
+				pause_sequence_idx++;
+				if (pause_sequence_idx == sizeof(pause_sequence)) {
 					event.keycode = KEY_PLAY_PAUSE;
 					event.is_released = false;
-					pause_idx = 0;
+					pause_sequence_idx = 0;
 					is_extended = false;
 					is_released = false;
 					return event;
@@ -149,7 +149,7 @@ static keyboard_event_t scancode_to_keyboard_event(uint8_t scancode) {
 				return event;
 			}
 			else {
-				pause_idx = 0;
+				pause_sequence_idx = 0;
 			}
 		}
 	}
@@ -164,7 +164,7 @@ static keyboard_event_t scancode_to_keyboard_event(uint8_t scancode) {
 				break;
 			case 0x12:
 				event.keycode = KEY_NONE;
-				print_screen_pressed_seq = true;
+				is_print_screen_pressed_pending = true;
 				break;
 			case 0x14:
 				event.keycode = KEY_RIGHT_CTRL;
@@ -273,7 +273,7 @@ static keyboard_event_t scancode_to_keyboard_event(uint8_t scancode) {
 				break;
 			case 0x7C:
 				event.keycode = KEY_NONE;
-				print_screen_released_seq = true;
+				is_print_screen_released_pending = true;
 				break;
 			case 0x7D:
 				event.keycode = KEY_PAGE_UP;
@@ -555,67 +555,65 @@ static keyboard_event_t scancode_to_keyboard_event(uint8_t scancode) {
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-static void ps2_keyboard_callback(interrupt_frame_t *frame, uint64_t irq_num) {
+static void keyboard_event_handler(interrupt_frame_t *frame, uint64_t irq_num) {
 #pragma GCC diagnostic pop
 	uint8_t scancode = inb(KBD_DATA);
-	keyboard_event_t event = scancode_to_keyboard_event(scancode);
+	keyboard_event_t event = keyboard_translate_scancode(scancode);
 	if (event.keycode == KEY_NONE || event.keycode == KEY_UNKNOWN) {
 		return;
 	}
 
-	keyboard_events_buff[curr_keyboard_event_buff_idx] = event;
-	curr_keyboard_event_buff_idx = (curr_keyboard_event_buff_idx + 1) % MAX_KEYBOARD_BUFF_SIZE;
-	curr_buff_size =
-	    curr_buff_size < MAX_KEYBOARD_BUFF_SIZE ? curr_buff_size + 1 : MAX_KEYBOARD_BUFF_SIZE;
+	keyboard_event_buff[event_buff_idx] = event;
+	event_buff_idx = (event_buff_idx + 1) % MAX_KEYBOARD_BUFF_SIZE;
+	event_count = event_count < MAX_KEYBOARD_BUFF_SIZE ? event_count + 1 : MAX_KEYBOARD_BUFF_SIZE;
 
 	if (keyboard_callback) {
-		keyboard_callback(consume_event());
+		keyboard_callback(keyboard_get_event());
 	}
 }
 
-static void flush_keyboard(void) {
+static void keyboard_flush_buff(void) {
 	while (inb(KBD_STATUS) & 0x1) {
 		(void)inb(KBD_DATA);
 	}
 }
 
-static void set_ps2_config_byte(void) {
+static void ps2_controller_configure(void) {
 	while (inb(KBD_STATUS) & 0x02);
 	outb(KBD_COMMAND, COMMAND_WRITE_CCB);
 	while (inb(KBD_STATUS) & 0x02);
 	outb(KBD_DATA, PS2_CONFIG_BYTE);
 }
 
-int init_keyboard(void) {
+int keyboard_init(void) {
 	// TODO: execute self-test, disable AUX ...
-	if (disable_scanning()) {
+	if (keyboard_disable_scanning()) {
 		return RET_ERR;
 	}
 
-	flush_keyboard();
-	set_ps2_config_byte();
+	keyboard_flush_buff();
+	ps2_controller_configure();
 
-	if (set_default_scancode_set()) {
+	if (keyboard_set_default_scancode_set()) {
 		return RET_ERR;
 	}
 
-	install_irq_driver(1, ps2_keyboard_callback);
+	idt_install_irq_driver(1, keyboard_event_handler);
 
-	if (enable_scanning()) {
+	if (keyboard_enable_scanning()) {
 		return RET_ERR;
 	}
 
 	return RET_OK;
 }
 
-keyboard_event_t consume_event(void) {
-	int idx = ((curr_keyboard_event_buff_idx - curr_buff_size) + MAX_KEYBOARD_BUFF_SIZE) %
-	          MAX_KEYBOARD_BUFF_SIZE;
-	keyboard_event_t event = keyboard_events_buff[idx];
-	curr_buff_size--;
+keyboard_event_t keyboard_get_event(void) {
+	int idx = ((event_buff_idx - event_count) + MAX_KEYBOARD_BUFF_SIZE) % MAX_KEYBOARD_BUFF_SIZE;
+	keyboard_event_t event = keyboard_event_buff[idx];
+	event_count--;
 	return event;
 }
 
-void install_keyboard_event_callback(void (*callback)(keyboard_event_t)) {
+void keyboard_install_event_callback(void (*callback)(keyboard_event_t)) {
 	keyboard_callback = callback;
 }

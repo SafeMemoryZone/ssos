@@ -4,21 +4,13 @@
 
 #include "../limine.h"
 
-// Misc
-void init_screen(struct limine_framebuffer *framebuffer);
-uint32_t get_rgb_color(uint32_t red, uint32_t green, uint32_t blue);
-void set_color(uint32_t color);
-void set_font_scale(int scale);
-
-// Pixel drawing functions
-void draw_pixel(uint64_t pos_x, uint64_t pos_y);
-void clear_screen(void);
-
-// Higher level printing functions
-void kputch(char ch);
-void kprint(char *str);
-void kprint_addr(uintptr_t addr);
-
-// View manipulation
-void scroll_screen(unsigned int pixel_count);
+void screen_init(struct limine_framebuffer *framebuffer);
+uint32_t screen_get_rgb_color(uint32_t red, uint32_t green, uint32_t blue);
+void screen_set_color(uint32_t color);
+void screen_set_font_scale(int scale);
+void screen_putch(char ch);
+void screen_print(char *str);
+void screen_print_addr(uintptr_t addr);
+void screen_scroll(unsigned int pixel_count);
+void screen_clear(void);
 #endif  // SCREEN_H

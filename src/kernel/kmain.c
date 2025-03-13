@@ -36,40 +36,40 @@ void kmain(void) {
 		stop();
 	}
 
-	init_screen(framebuffer_request.response->framebuffers[0]);
-	set_font_scale(2);
-	kprint("[INFO] Initilized screen.\n");
-	init_idt();
-	kprint("[INFO] Initilized IDT.\n");
-	init_PIC();
-	kprint("[INFO] Initilized PIC.\n");
+	screen_init(framebuffer_request.response->framebuffers[0]);
+	screen_set_font_scale(2);
+	screen_print("[INFO] Initilized screen.\n");
+	idt_init();
+	screen_print("[INFO] Initilized IDT.\n");
+	pic_init();
+	screen_print("[INFO] Initilized PIC.\n");
 	enable_interrupts();
-	kprint("[INFO] Enabled interrupts.\n");
+	screen_print("[INFO] Enabled interrupts.\n");
 
-	if (init_keyboard()) {
-		kprint("[FATAL ERROR] Failed to initilize keyboard driver. Stopping.\n");
+	if (keyboard_init()) {
+		screen_print("[FATAL ERROR] Failed to initilize keyboard driver. Stopping.\n");
 		stop();
 	}
 
-	if (init_page_frame_allocator(*memory_map_request.response->entries,
-	                              memory_map_request.response->entry_count,
-	                              hhdm_request.response->offset)) {
-		kprint("[FATAL ERROR] Failed to initilize page frame allocator. Stopping.\n");
-		stop();
-	}
-	else {
-		kprint("[INFO] Initilized page frame allocator.\n");
-	}
-
-	if (init_alloc()) {
-		kprint("[FATAL ERROR] Failed to initilize kernel memory allocator. Stopping.\n");
+	if (paging_init_frame_allocator(*memory_map_request.response->entries,
+	                                memory_map_request.response->entry_count,
+	                                hhdm_request.response->offset)) {
+		screen_print("[FATAL ERROR] Failed to initilize page frame allocator. Stopping.\n");
 		stop();
 	}
 	else {
-		kprint("[INFO] Initilized kernel memory allocator.\n");
+		screen_print("[INFO] Initilized page frame allocator.\n");
 	}
 
-	start_shell();
-	kprint("[WARNING] Kernel fallback executed. Stopping.\n");
+	if (kalloc_init()) {
+		screen_print("[FATAL ERROR] Failed to initilize kernel memory allocator. Stopping.\n");
+		stop();
+	}
+	else {
+		screen_print("[INFO] Initilized kernel memory allocator.\n");
+	}
+
+	shell_init();
+	screen_print("[WARNING] Kernel fallback executed. Stopping.\n");
 	stop();
 }

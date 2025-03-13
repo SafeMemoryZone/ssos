@@ -12,7 +12,6 @@
 
 void stop(void);
 void wait_for_interrupts(void);
-void assert(bool cond, char *msg);
 size_t log2(size_t x);
 size_t round_pow2(size_t x);
 #endif  // MISC_H

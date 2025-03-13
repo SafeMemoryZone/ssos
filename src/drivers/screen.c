@@ -5,18 +5,17 @@
 
 #include "../limine.h"
 #include "../mem/mem.h"
-#include "../misc.h"
 
-static struct limine_framebuffer *FRAMEBUFFER;
-static uint64_t curr_x;
-static uint64_t curr_y;
-static uint32_t curr_color;
-static int curr_scale;
+static struct limine_framebuffer *screen_fb;
+static uint64_t cursor_x;
+static uint64_t cursor_y;
+static uint32_t screen_color;
+static int font_scale;
 
 #define FONT_WIDTH 8
 #define FONT_HEIGHT 8
 
-uint8_t font8x8[128][8] = {
+static uint8_t font8x8_buff[128][8] = {
     {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},  // U+0000
     {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},  // U+0001
     {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},  // U+0002
@@ -147,113 +146,102 @@ uint8_t font8x8[128][8] = {
     {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}   // U+007F
 };
 
-void init_screen(struct limine_framebuffer *framebuffer) {
-	FRAMEBUFFER = framebuffer;
-	curr_x = curr_y = 0;
-	curr_color = get_rgb_color(255, 255, 255);
-	curr_scale = 1;
+static inline void draw_pixel(uint64_t x, uint64_t y) {
+	uint32_t *address = screen_fb->address + screen_fb->pitch * y + (screen_fb->bpp / 8) * x;
+	*address = screen_color;
 }
 
-uint32_t get_rgb_color(uint32_t red, uint32_t green, uint32_t blue) {
-	return (red << FRAMEBUFFER->red_mask_shift) | (green << FRAMEBUFFER->green_mask_shift) |
-	       (blue << FRAMEBUFFER->blue_mask_shift);
+void screen_init(struct limine_framebuffer *fb) {
+	screen_fb = fb;
+	cursor_x = cursor_y = 0;
+	screen_color = screen_get_rgb_color(255, 255, 255);
+	font_scale = 1;
 }
 
-void set_color(uint32_t color) { curr_color = color; }
-
-void set_font_scale(int scale) {
-	assert(scale > 0, "set_font_scale() failed because scale <= 0");
-	curr_scale = scale;
+uint32_t screen_get_rgb_color(uint32_t red, uint32_t green, uint32_t blue) {
+	return (red << screen_fb->red_mask_shift) | (green << screen_fb->green_mask_shift) |
+	       (blue << screen_fb->blue_mask_shift);
 }
 
-void draw_pixel(uint64_t pos_x, uint64_t pos_y) {
-	assert(pos_x < FRAMEBUFFER->width, "draw_pixel() failed because pos_x >= screen width");
-	assert(pos_y < FRAMEBUFFER->height, "draw_pixel() failed because pos_y >= screen height");
+void screen_set_color(uint32_t color) { screen_color = color; }
 
-	uint32_t *address =
-	    FRAMEBUFFER->address + FRAMEBUFFER->pitch * pos_y + (FRAMEBUFFER->bpp / 8) * pos_x;
-	*address = curr_color;
-}
+void screen_set_font_scale(int scale) { font_scale = scale; }
 
-void clear_screen(void) {
-	uint32_t *address = (uint32_t *)FRAMEBUFFER->address;
-	uint64_t pixels_per_row = FRAMEBUFFER->pitch / 4;
-	uint64_t total_pixels = pixels_per_row * FRAMEBUFFER->height;
-
-	for (uint64_t i = 0; i < total_pixels; i++) {
-		address[i] = curr_color;
-	}
-}
-
-void scroll_screen(unsigned int pixel_count) {
-	assert(pixel_count <= FRAMEBUFFER->height,
-	       "scroll_screen() failed because pixel_count > screen height");
-	size_t bytes_to_move = (FRAMEBUFFER->height - pixel_count) * FRAMEBUFFER->pitch;
-	memmove(FRAMEBUFFER->address,
-	        (uint8_t *)FRAMEBUFFER->address + pixel_count * FRAMEBUFFER->pitch, bytes_to_move);
-	memset((uint8_t *)FRAMEBUFFER->address + bytes_to_move, 0, pixel_count * FRAMEBUFFER->pitch);
-}
-
-void kputch(char ch) {
+void screen_putch(char ch) {
 	if (ch == '\n') {
-		goto print_newline;
+		goto newline;
 	}
 
 	for (int row_idx = 0; row_idx < FONT_HEIGHT; row_idx++) {
 		for (int col_idx = 0; col_idx < FONT_WIDTH; col_idx++) {
-			int bit = font8x8[(int)ch][row_idx] & (1 << col_idx);
-
+			int bit = font8x8_buff[(int)ch][row_idx] & (1 << col_idx);
 			if (bit) {
-				for (int dx = 0; dx < curr_scale; dx++) {
-					for (int dy = 0; dy < curr_scale; dy++) {
-						draw_pixel(curr_x + (col_idx * curr_scale) + dx,
-						           curr_y + (row_idx * curr_scale) + dy);
+				for (int dx = 0; dx < font_scale; dx++) {
+					for (int dy = 0; dy < font_scale; dy++) {
+						draw_pixel(cursor_x + (col_idx * font_scale) + dx,
+						           cursor_y + (row_idx * font_scale) + dy);
 					}
 				}
 			}
 		}
 	}
 
-	if (curr_x + FONT_WIDTH * curr_scale >= FRAMEBUFFER->width) {
-	print_newline:
-		curr_x = 0;
-
-		if (curr_y + FONT_HEIGHT * curr_scale >= FRAMEBUFFER->height) {
-			scroll_screen(FONT_HEIGHT * curr_scale);
+	if (cursor_x + FONT_WIDTH * font_scale >= screen_fb->width) {
+	newline:
+		cursor_x = 0;
+		if (cursor_y + FONT_HEIGHT * font_scale >= screen_fb->height) {
+			screen_scroll(FONT_HEIGHT * font_scale);
 		}
 		else {
-			curr_y += FONT_HEIGHT * curr_scale;
+			cursor_y += FONT_HEIGHT * font_scale;
 		}
 	}
 	else {
-		curr_x += FONT_WIDTH * curr_scale;
+		cursor_x += FONT_WIDTH * font_scale;
 	}
 }
 
-void kprint(char *str) {
+void screen_print(char *str) {
 	while (*str) {
-		kputch(*str++);
+		screen_putch(*str++);
 	}
 }
 
-void kprint_addr(uintptr_t addr) {
-	char buf[128];
-	int i = 0;
+void screen_print_addr(uintptr_t addr) {
+	char buff[128];
+	int idx = 0;
 
-	kprint("0x");
+	screen_print("0x");
 
 	if (addr == 0) {
-		kputch('0');
+		screen_putch('0');
 		return;
 	}
 
 	while (addr) {
 		int digit = addr % 16;
-		buf[i++] = digit < 10 ? digit + '0' : digit - 10 + 'a';
+		buff[idx++] = digit < 10 ? digit + '0' : digit - 10 + 'a';
 		addr /= 16;
 	}
 
-	for (int j = i - 1; j >= 0; j--) {
-		kputch(buf[j]);
+	for (int idx2 = idx - 1; idx2 >= 0; idx2--) {
+		screen_putch(buff[idx2]);
+	}
+}
+
+void screen_scroll(unsigned int pixel_count) {
+	size_t bytes_to_move = (screen_fb->height - pixel_count) * screen_fb->pitch;
+	memmove(screen_fb->address, (uint8_t *)screen_fb->address + pixel_count * screen_fb->pitch,
+	        bytes_to_move);
+	memset((uint8_t *)screen_fb->address + bytes_to_move, 0, pixel_count * screen_fb->pitch);
+}
+
+void screen_clear(void) {
+	uint32_t *fb_ptr = (uint32_t *)screen_fb->address;
+	uint64_t row_pixels = screen_fb->pitch / 4;
+	uint64_t total_pixels = row_pixels * screen_fb->height;
+
+	for (uint64_t idx = 0; idx < total_pixels; idx++) {
+		fb_ptr[idx] = screen_color;
 	}
 }

@@ -18,7 +18,7 @@ irq_stub_%+%1:
 
     mov rdi, rsp
     mov rsi, %1 ; IRQ number
-    call irq_handler
+    call idt_irq_handler
 
     pop r15
     pop r14
@@ -58,7 +58,7 @@ isr_stub_%+%1:
 
     mov rdi, rsp
     mov rsi, %1 ; Interrupt number
-    call exception_handler
+    call idt_exception_handler
 
     pop r15
     pop r14
@@ -98,7 +98,7 @@ isr_stub_%+%1:
     
     mov rdi, rsp
     mov rsi, %1 ; Interrupt number
-    call exception_handler
+    call idt_exception_handler
 
     pop r15
     pop r14
@@ -118,8 +118,8 @@ isr_stub_%+%1:
     iretq
 %endmacro
 
-extern exception_handler
-extern irq_handler
+extern idt_exception_handler
+extern idt_irq_handler
 
 isr_no_err_stub 0
 isr_no_err_stub 1

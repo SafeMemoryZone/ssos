@@ -11,56 +11,6 @@
 #define MEM_BLOCKS_MAX_LEVEL_COUNT 34
 #define MEM_BLOCKS_BASE_LEVEL 3
 
-void *memcpy(void *dest, const void *src, size_t n) {
-	uint8_t *pdest = (uint8_t *)dest;
-	const uint8_t *psrc = (const uint8_t *)src;
-	for (size_t i = 0; i < n; i++) {
-		pdest[i] = psrc[i];
-	}
-	return dest;
-}
-
-void *memset(void *s, int c, size_t n) {
-	uint8_t *p = (uint8_t *)s;
-	for (size_t i = 0; i < n; i++) {
-		p[i] = (uint8_t)c;
-	}
-	return s;
-}
-
-void *memmove(void *dest, const void *src, size_t n) {
-	uint8_t *pdest = (uint8_t *)dest;
-	const uint8_t *psrc = (const uint8_t *)src;
-	if (src > dest) {
-		for (size_t i = 0; i < n; i++) {
-			pdest[i] = psrc[i];
-		}
-	}
-	else if (src < dest) {
-		for (size_t i = n; i > 0; i--) {
-			pdest[i - 1] = psrc[i - 1];
-		}
-	}
-	return dest;
-}
-
-int memcmp(const void *s1, const void *s2, size_t n) {
-	const uint8_t *p1 = (const uint8_t *)s1;
-	const uint8_t *p2 = (const uint8_t *)s2;
-	for (size_t i = 0; i < n; i++) {
-		if (p1[i] != p2[i]) {
-			return p1[i] < p2[i] ? -1 : 1;
-		}
-	}
-	return 0;
-}
-
-size_t strlen(const char *str) {
-	size_t len = 0;
-	while (*str++) len++;
-	return len;
-}
-
 typedef struct mem_block {
 	struct mem_block *next;
 	uint8_t level;
@@ -71,8 +21,8 @@ static mem_block_t *mem_blocks[MEM_BLOCKS_MAX_LEVEL_COUNT] = {0};
 static size_t highest_block_size = PAGE_SIZE;
 static int highest_level = LOG2_PAGE_SIZE - MEM_BLOCKS_BASE_LEVEL;
 
-int init_alloc(void) {
-	mem_block_t *init_block = alloc_pages(1);
+int kalloc_init(void) {
+	mem_block_t *init_block = paging_alloc_pages(1);
 	if (!init_block) {
 		return RET_ERR;
 	}
@@ -99,7 +49,7 @@ void *kmalloc(size_t bytes) {
 		highest_block_size *= 2;
 		highest_level++;
 
-		mem_blocks[highest_level] = alloc_pages(highest_block_size / PAGE_SIZE);
+		mem_blocks[highest_level] = paging_alloc_pages(highest_block_size / PAGE_SIZE);
 
 		if (!mem_blocks[highest_level]) {
 			return NULL;
@@ -197,4 +147,54 @@ void kfree(void *mem) {
 	// Add the block back to the freelist
 	block->next = mem_blocks[block->level];
 	mem_blocks[block->level] = block;
+}
+
+void *memcpy(void *dest, const void *src, size_t n) {
+	uint8_t *pdest = (uint8_t *)dest;
+	const uint8_t *psrc = (const uint8_t *)src;
+	for (size_t i = 0; i < n; i++) {
+		pdest[i] = psrc[i];
+	}
+	return dest;
+}
+
+void *memset(void *s, int c, size_t n) {
+	uint8_t *p = (uint8_t *)s;
+	for (size_t i = 0; i < n; i++) {
+		p[i] = (uint8_t)c;
+	}
+	return s;
+}
+
+void *memmove(void *dest, const void *src, size_t n) {
+	uint8_t *pdest = (uint8_t *)dest;
+	const uint8_t *psrc = (const uint8_t *)src;
+	if (src > dest) {
+		for (size_t i = 0; i < n; i++) {
+			pdest[i] = psrc[i];
+		}
+	}
+	else if (src < dest) {
+		for (size_t i = n; i > 0; i--) {
+			pdest[i - 1] = psrc[i - 1];
+		}
+	}
+	return dest;
+}
+
+int memcmp(const void *s1, const void *s2, size_t n) {
+	const uint8_t *p1 = (const uint8_t *)s1;
+	const uint8_t *p2 = (const uint8_t *)s2;
+	for (size_t i = 0; i < n; i++) {
+		if (p1[i] != p2[i]) {
+			return p1[i] < p2[i] ? -1 : 1;
+		}
+	}
+	return 0;
+}
+
+size_t strlen(const char *str) {
+	size_t len = 0;
+	while (*str++) len++;
+	return len;
 }
