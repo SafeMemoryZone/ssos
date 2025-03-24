@@ -2,7 +2,7 @@
 #define SCREEN_H
 #include <stdint.h>
 
-#include "../limine.h"
+#include "limine.h"
 
 void screen_init(struct limine_framebuffer *framebuffer);
 uint32_t screen_get_rgb_color(uint32_t red, uint32_t green, uint32_t blue);

@@ -2,8 +2,7 @@
 
 #include <stdint.h>
 
-#include "../drivers/screen.h"
-#include "misc.h"
+#include "drivers/screen.h"
 #include "pic.h"
 
 #define IDT_ENTRY_COUNT 256
@@ -91,3 +90,12 @@ void idt_install_irq_driver(int irq_num, void (*handler)(interrupt_frame_t*, uin
 }
 
 void enable_interrupts(void) { __asm__ __volatile__("sti" ::: "memory"); }
+
+__attribute__((noreturn)) void stop(void) {
+	asm volatile("cli");
+	while (1) {
+		asm volatile("hlt");
+	}
+}
+
+void wait_for_interrupts(void) { __asm__ __volatile__("hlt"); }

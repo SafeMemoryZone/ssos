@@ -16,7 +16,7 @@ $ ./make-hdd
 
 3. Run the operating system:
 ```
-$ UEFI_FIRMWARE_PATH=<OVMF-path> ./run-qemu
+$ OVMF_PATH=<OVMF-path> ./run-qemu
 ```
 
 ## License

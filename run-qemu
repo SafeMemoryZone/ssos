@@ -1,5 +1,6 @@
 #!/bin/sh
 qemu-system-x86_64 \
-  -drive if=pflash,format=raw,readonly,file=$UEFI_FIRMWARE_PATH/OVMF_CODE.fd \
-  -drive if=pflash,format=raw,file=$UEFI_FIRMWARE_PATH/OVMF_VARS.fd \
-  -drive file=ssos.hdd,format=raw
+  -drive if=pflash,format=raw,readonly,file=$OVMF_PATH/OVMF_CODE.fd \
+  -drive if=pflash,format=raw,file=$OVMF_PATH/OVMF_VARS.fd \
+  -drive if=ide,file=ssos.hdd,format=raw \
+  -serial stdio

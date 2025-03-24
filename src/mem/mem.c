@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "misc.h"
+#include "misc/bit_math.h"
 #include "paging.h"
 
 #define KERNEL_MEM_ALIGNMENT 16
@@ -24,13 +24,14 @@ static int highest_level = LOG2_PAGE_SIZE - MEM_BLOCKS_BASE_LEVEL;
 int kalloc_init(void) {
 	mem_block_t *init_block = paging_alloc_pages(1);
 	if (!init_block) {
-		return RET_ERR;
+		return -1;
 	}
+
 	mem_blocks[highest_level] = init_block;
 	init_block->next = NULL;
 	init_block->level = highest_level;
 	init_block->is_free = true;
-	return RET_OK;
+	return 0;
 }
 
 void *kmalloc(size_t bytes) {
@@ -60,7 +61,7 @@ void *kmalloc(size_t bytes) {
 		mem_blocks[highest_level]->is_free = true;
 	}
 
-	int target_level = log2(round_pow2(bytes)) - MEM_BLOCKS_BASE_LEVEL;
+	int target_level = logb(round_pow2_boundary(bytes)) - MEM_BLOCKS_BASE_LEVEL;
 
 	if (mem_blocks[target_level]) {
 		mem_block_t *free_block = mem_blocks[target_level];

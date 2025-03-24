@@ -1,6 +1,6 @@
 #include "pic.h"
 
-#include "../drivers/ports.h"
+#include "drivers/ports.h"
 
 #define PIC_MASTER 0x20  // Master PIC
 #define PIC_SLAVE 0xA0   // Slave PIC

@@ -28,4 +28,6 @@ typedef struct {
 void idt_init(void);
 void idt_install_irq_driver(int irq_num, void (*handler)(interrupt_frame_t*, uint64_t));
 void enable_interrupts(void);
+void stop(void);
+void wait_for_interrupts(void);
 #endif  // IDT_H

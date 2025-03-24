@@ -1,10 +1,11 @@
 #include "paging.h"
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
 #include "mem.h"
-#include "misc.h"
+#include "misc/bit_math.h"
 #include "paging.h"
 
 #define MAX_PAGES 2560
@@ -146,7 +147,7 @@ int paging_init_frame_allocator(struct limine_memmap_entry *mmap_entries, size_t
 	}
 
 	if (!usable_block_found) {
-		return RET_ERR;
+		return -1;
 	}
 
 	size_t page_count = best_len / PAGE_SIZE;
@@ -158,7 +159,7 @@ int paging_init_frame_allocator(struct limine_memmap_entry *mmap_entries, size_t
 
 	paging_phys_page_base = best_base;
 	paging_present_page_count = page_count > MAX_PAGES ? MAX_PAGES : page_count;
-	return RET_OK;
+	return 0;
 }
 
 void *paging_alloc_pages(size_t count) {

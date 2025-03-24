@@ -1,13 +1,14 @@
 #include <stddef.h>
 
+#include "drivers/disk.h"
 #include "drivers/keyboard.h"
 #include "drivers/screen.h"
+#include "fs/gpt.h"
 #include "interrupts/idt.h"
 #include "interrupts/pic.h"
 #include "limine.h"
 #include "mem/mem.h"
 #include "mem/paging.h"
-#include "misc.h"
 #include "shell/shell.h"
 
 __attribute__((used,
@@ -30,9 +31,8 @@ void kmain(void) {
 		stop();
 	}
 
-	// Don't support multiple framebuffers
-	if (!memory_map_request.response || !hhdm_request.response || !framebuffer_request.response ||
-	    framebuffer_request.response->framebuffer_count > 1) {
+	// Stop if any request was not fulfilled
+	if (!memory_map_request.response || !hhdm_request.response || !framebuffer_request.response) {
 		stop();
 	}
 
@@ -67,6 +67,23 @@ void kmain(void) {
 	}
 	else {
 		screen_print("[INFO] Initilized kernel memory allocator.\n");
+	}
+	if (disk_init()) {
+		screen_print("[FATAL ERROR] Failed to initilize disk. Stopping.\n");
+		stop();
+	}
+	else {
+		screen_print("[INFO] Initilized disk.\n");
+	}
+	int ret = gpt_init();
+	if (ret) {
+		screen_print_addr(ret);
+		screen_putch('\n');
+		screen_print("[FATAL ERROR] Failed to initilize GPT. Stopping.\n");
+		stop();
+	}
+	else {
+		screen_print("[INFO] Initilized GPT.\n");
 	}
 
 	shell_init();

@@ -2,10 +2,10 @@
 
 #include <stddef.h>
 
-#include "../drivers/screen.h"
 #include "drivers/keyboard.h"
+#include "drivers/screen.h"
+#include "interrupts/idt.h"
 #include "mem/mem.h"
-#include "misc.h"
 
 static bool shell_prompt_confirmed;
 static char *shell_current_line;

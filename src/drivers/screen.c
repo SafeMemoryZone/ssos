@@ -3,8 +3,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "../limine.h"
-#include "../mem/mem.h"
+#include "limine.h"
+#include "mem/mem.h"
 
 static struct limine_framebuffer *screen_fb;
 static uint64_t cursor_x;

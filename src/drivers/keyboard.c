@@ -3,7 +3,6 @@
 #include <stdint.h>
 
 #include "interrupts/idt.h"
-#include "misc.h"
 #include "ports.h"
 
 #define MAX_RETRY_COUNT 3
@@ -14,15 +13,15 @@
 #define KBD_STATUS 0x64
 #define KBD_COMMAND 0x64
 
-#define COMMAND_ENABLE_SCANNING 0xF4
-#define COMMAND_DISABLE_SCANNING 0xF5
-#define COMMAND_SET_SCANCODE_SET 0xF0
-#define COMMAND_WRITE_CCB 0x60
+#define KBD_COMMAND_ENABLE_SCANNING 0xF4
+#define KBD_COMMAND_DISABLE_SCANNING 0xF5
+#define KBD_COMMAND_SET_SCANCODE_SET 0xF0
+#define KBD_COMMAND_WRITE_CCB 0x60
 
 #define PS2_CONFIG_BYTE 0b00100101
 
-#define RESP_ACK 0xFA
-#define RESP_RESEND 0xFE
+#define KBD_RESP_ACK 0xFA
+#define KBD_RESP_RESEND 0xFE
 
 static keyboard_event_t keyboard_event_buff[MAX_KEYBOARD_BUFF_SIZE] = {0};
 static int event_buff_idx = 0;
@@ -35,14 +34,14 @@ static int keyboard_enable_scanning(void) {
 
 	do {
 		if (retry_count++ == MAX_RETRY_COUNT) {
-			return RET_ERR;
+			return -1;
 		}
-		outb(KBD_DATA, COMMAND_ENABLE_SCANNING);
+		outb(KBD_DATA, KBD_COMMAND_ENABLE_SCANNING);
 		io_wait();
 		resp = inb(KBD_DATA);
-	} while (resp == RESP_RESEND);
+	} while (resp == KBD_RESP_RESEND);
 
-	return RET_OK;
+	return 0;
 }
 
 static int keyboard_disable_scanning(void) {
@@ -51,14 +50,14 @@ static int keyboard_disable_scanning(void) {
 
 	do {
 		if (retry_count++ == MAX_RETRY_COUNT) {
-			return RET_ERR;
+			return -1;
 		}
-		outb(KBD_DATA, COMMAND_DISABLE_SCANNING);
+		outb(KBD_DATA, KBD_COMMAND_DISABLE_SCANNING);
 		io_wait();
 		resp = inb(KBD_DATA);
-	} while (resp == RESP_RESEND);
+	} while (resp == KBD_RESP_RESEND);
 
-	return RET_OK;
+	return 0;
 }
 
 static int keyboard_set_default_scancode_set(void) {
@@ -67,32 +66,32 @@ static int keyboard_set_default_scancode_set(void) {
 
 	do {
 		if (retry_count++ == MAX_RETRY_COUNT) {
-			return RET_ERR;
+			return -1;
 		}
-		outb(KBD_DATA, COMMAND_SET_SCANCODE_SET);
+		outb(KBD_DATA, KBD_COMMAND_SET_SCANCODE_SET);
 		io_wait();
 		resp = inb(KBD_DATA);
-	} while (resp == RESP_RESEND);
+	} while (resp == KBD_RESP_RESEND);
 
-	if (resp != RESP_ACK) {
-		return RET_ERR;
+	if (resp != KBD_RESP_ACK) {
+		return -2;
 	}
 
 	retry_count = 0;
 	do {
 		if (retry_count++ == MAX_RETRY_COUNT) {
-			return RET_ERR;
+			return -3;
 		}
 		outb(KBD_DATA, DEFAULT_SCANCODE_SET);
 		io_wait();
 		resp = inb(KBD_DATA);
-	} while (resp == RESP_RESEND);
+	} while (resp == KBD_RESP_RESEND);
 
-	if (resp != RESP_ACK) {
-		return RET_ERR;
+	if (resp != KBD_RESP_ACK) {
+		return -4;
 	}
 
-	return RET_OK;
+	return 0;
 }
 
 static keyboard_event_t keyboard_translate_scancode(uint8_t scancode) {
@@ -555,7 +554,7 @@ static keyboard_event_t keyboard_translate_scancode(uint8_t scancode) {
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-static void keyboard_event_handler(interrupt_frame_t *frame, uint64_t irq_num) {
+static void keyboard_irq_handler(interrupt_frame_t *frame, uint64_t irq_num) {
 #pragma GCC diagnostic pop
 	uint8_t scancode = inb(KBD_DATA);
 	keyboard_event_t event = keyboard_translate_scancode(scancode);
@@ -580,7 +579,7 @@ static void keyboard_flush_buff(void) {
 
 static void ps2_controller_configure(void) {
 	while (inb(KBD_STATUS) & 0x02);
-	outb(KBD_COMMAND, COMMAND_WRITE_CCB);
+	outb(KBD_COMMAND, KBD_COMMAND_WRITE_CCB);
 	while (inb(KBD_STATUS) & 0x02);
 	outb(KBD_DATA, PS2_CONFIG_BYTE);
 }
@@ -588,23 +587,23 @@ static void ps2_controller_configure(void) {
 int keyboard_init(void) {
 	// TODO: execute self-test, disable AUX ...
 	if (keyboard_disable_scanning()) {
-		return RET_ERR;
+		return -1;
 	}
 
 	keyboard_flush_buff();
 	ps2_controller_configure();
 
 	if (keyboard_set_default_scancode_set()) {
-		return RET_ERR;
+		return -2;
 	}
 
-	idt_install_irq_driver(1, keyboard_event_handler);
+	idt_install_irq_driver(1, keyboard_irq_handler);
 
 	if (keyboard_enable_scanning()) {
-		return RET_ERR;
+		return -3;
 	}
 
-	return RET_OK;
+	return 0;
 }
 
 keyboard_event_t keyboard_get_event(void) {
